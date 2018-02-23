@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="LFAOI_clear_all_model">
+<interface>
+<ic>
+<par name="vec_model_tuple" base_type="ctrl" dimension="1"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>model_len := vec_model_tuple.length()</l>
+<l>for Index := 0 to model_len-1 by 1</l>
+<l>    if (Index == 2)</l>
+<l>        continue</l>
+<l>    endif</l>
+<l>    model_tuple := vec_model_tuple.at(Index)</l>
+<l>    model_num := |model_tuple|/2</l>
+<l>    if (model_num)</l>
+<l>        model_id := model_tuple[0:model_num-1]</l>
+<l>        model_type := model_tuple[model_num:model_num*2-1]</l>
+<l>        try</l>
+<l>        clear_model (model_type, model_id, iFlag)</l>
+<l>        catch (Exception)</l>
+<l>        endtry</l>
+<l>    endif</l>
+<l>endfor</l>
+<l>return ()</l>
+</body>
+<docu id="LFAOI_clear_all_model">
+<parameters>
+<parameter id="iFlag"/>
+<parameter id="vec_model_tuple"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

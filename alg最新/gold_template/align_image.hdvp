@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="align_image">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="match_region" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="ImageAffinTrans" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="angle_start" base_type="ctrl" dimension="0"/>
+<par name="angle_extent" base_type="ctrl" dimension="0"/>
+<par name="score_thresh" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="hom_temp2image" base_type="ctrl" dimension="0"/>
+<par name="row" base_type="ctrl" dimension="0"/>
+<par name="col" base_type="ctrl" dimension="0"/>
+<par name="angle" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>********************************************************************************</c>
+<c>*        align image to golden model image, init matching</c>
+<c>*        in:  score_thresh, angle_start, angle_extent, ModelID</c>
+<c>*        out: ImageAffinTrans, hom_temp2image, iFlag, ErrMsg</c>
+<c>*        pre modification:  yilun chen, 05/05/16</c>
+<c>*        last modification: yongbang zhou, @12/11/2016</c>
+<c>********************************************************************************</c>
+<l>iFlag := 0</l>
+<l>coarse_matching (Image, match_region, model_type, ModelID, angle_start, angle_extent, 0.3, \
+                 score_thresh, row, col, angle, score, hom_temp2image, iFlag, ErrMsg)</l>
+<l>if (iFlag # 0)</l>
+<l>    return()</l>
+<l>endif</l>
+<l>hom_mat2d_invert (hom_temp2image, hom_image2temp)</l>
+<l>affine_trans_image (Image, ImageAffinTrans, hom_image2temp, 'nearest_neighbor', 'false')</l>
+<l>return ()</l>
+</body>
+<docu id="align_image">
+<parameters>
+<parameter id="Image"/>
+<parameter id="ImageAffinTrans"/>
+<parameter id="ModelID"/>
+<parameter id="angle"/>
+<parameter id="angle_extent"/>
+<parameter id="angle_start"/>
+<parameter id="col"/>
+<parameter id="hom_temp2image"/>
+<parameter id="iFlag"/>
+<parameter id="match_region"/>
+<parameter id="model_type"/>
+<parameter id="row"/>
+<parameter id="score_thresh"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

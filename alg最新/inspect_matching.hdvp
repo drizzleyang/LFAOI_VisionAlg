@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="inspect_matching">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="InspectRegions" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="DefectRegions" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="ModelType" base_type="ctrl" dimension="0"/>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="AngleStart" base_type="ctrl" dimension="0"/>
+<par name="AngleExtent" base_type="ctrl" dimension="0"/>
+<par name="MatchThr" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="MatchScore" base_type="ctrl" dimension="0"/>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="err_msg" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>err_msg := ''</l>
+<l>MatchScore := []</l>
+<l>gen_empty_obj (DefectRegions)</l>
+<c>********************** match inspect ***************************</c>
+<l>union1 (InspectRegions, RegionUnion)</l>
+<c>*取反</c>
+<l>complement (RegionUnion, RegionComplement)</l>
+<c>*豹子头</c>
+<l>paint_region (RegionComplement, Image, ImageResult, 0, 'fill')</l>
+<l>count_obj (InspectRegions, Number)</l>
+<l>for Index := 1 to Number by 1</l>
+<l>    select_obj (InspectRegions, ObjectSelected, Index)</l>
+<l>    reduce_domain (ImageResult, ObjectSelected, ImageReduced)</l>
+<l>    if (ModelType == 0)</l>
+<l>        find_ncc_model (ImageReduced, ModelID, AngleStart, AngleExtent, 0.1, 1, 0.5, 'true', 0, Row, Column, Angle, Score)</l>
+<l>    elseif (ModelType == 1)</l>
+<l>        find_shape_model (ImageReduced, ModelID, AngleStart, AngleExtent, 0.1, 1, 0.5, 'least_squares', 0, 0.9, Row, Column, Angle, Score)</l>
+<l>    else</l>
+<l>        iFlag := -2</l>
+<l>        err_msg := 'wrong model type'</l>
+<l>        return ()</l>
+<l>    endif    </l>
+<l>    if (|Score|=0)</l>
+<l>        MatchScore := [MatchScore, 0]</l>
+<l>    else</l>
+<l>        MatchScore := [MatchScore, Score]</l>
+<l>    endif    </l>
+<l>    if (|Score|=0 or Score &lt;MatchThr)</l>
+<l>        concat_obj (DefectRegions, ObjectSelected, DefectRegions)</l>
+<l>    endif</l>
+<l>endfor</l>
+<l>count_obj (DefectRegions, Number)</l>
+<l>if(Number&gt;0)</l>
+<l>    iFlag := -1</l>
+<l>    err_msg := 'NG, there are ' + Number + ' defect regions'</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="inspect_matching">
+<parameters>
+<parameter id="AngleExtent"/>
+<parameter id="AngleStart"/>
+<parameter id="DefectRegions"/>
+<parameter id="Image"/>
+<parameter id="InspectRegions"/>
+<parameter id="MatchScore"/>
+<parameter id="MatchThr"/>
+<parameter id="ModelID"/>
+<parameter id="ModelType"/>
+<parameter id="err_msg"/>
+<parameter id="iFlag"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

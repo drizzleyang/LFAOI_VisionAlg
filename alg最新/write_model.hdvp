@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="write_model">
+<interface>
+<io>
+<par name="show_contour" base_type="iconic" dimension="0"/>
+</io>
+<ic>
+<par name="model_path" base_type="ctrl" dimension="0"/>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+<par name="model_id" base_type="ctrl" dimension="0"/>
+<par name="def_row" base_type="ctrl" dimension="0"/>
+<par name="def_col" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag:=0</l>
+<c></c>
+<l>if(|model_type|=0)</l>
+<l>    iFlag:=-1</l>
+<l>    return()</l>
+<l>endif</l>
+<l>write_tuple(model_type, model_path+'/modelType.tup')</l>
+<l>if(|model_id|=0)</l>
+<l>    iFlag:=-1</l>
+<l>    return()</l>
+<l>endif    </l>
+<l>if(model_type=0)</l>
+<l>    write_ncc_model(model_id,model_path+'/modelID.dat')</l>
+<l>else</l>
+<l>    write_shape_model(model_id,model_path+'/modelID.dat')</l>
+<l>endif</l>
+<l>write_contour_xld_dxf(show_contour,model_path+'/showContour.dxf')</l>
+<l>write_tuple(def_row,model_path+'/defRow.tup')</l>
+<l>write_tuple(def_col,model_path+'/defCol.tup')</l>
+<c></c>
+<l>return ()</l>
+</body>
+<docu id="write_model">
+<parameters>
+<parameter id="def_col"/>
+<parameter id="def_row"/>
+<parameter id="iFlag"/>
+<parameter id="model_id"/>
+<parameter id="model_path"/>
+<parameter id="model_type"/>
+<parameter id="show_contour"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

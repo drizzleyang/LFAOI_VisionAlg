@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="distance_cc_angle">
+<interface>
+<io>
+<par name="Seg1" base_type="iconic" dimension="0"/>
+<par name="Seg2" base_type="iconic" dimension="0"/>
+</io>
+<ic>
+<par name="Angle" base_type="ctrl" dimension="0"/>
+<par name="row0" base_type="ctrl" dimension="0"/>
+<par name="col0" base_type="ctrl" dimension="0"/>
+<par name="row1" base_type="ctrl" dimension="0"/>
+<par name="col1" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="Distance" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>* xubo</c>
+<l>get_contour_xld (Seg1, Row, Col)</l>
+<l>idxEnd0 := |Row|-1</l>
+<l>if (idxEnd0 ==1)</l>
+<l>    tuple_select (Row, [0,idxEnd0], Row1)</l>
+<l>    tuple_select (Col, [0,idxEnd0], Col1)</l>
+<l>else</l>
+<l>    angle_ll (Row[0], Col[0], Row[idxEnd0], Col[idxEnd0], row0, col0, row1, col1, Angle2)</l>
+<l>    if (abs(Angle2) &lt; 1)</l>
+<l>        tuple_select (Row, [0,idxEnd0], Row1)</l>
+<l>        tuple_select (Col, [0,idxEnd0], Col1)</l>
+<l>    else</l>
+<l>        tuple_select (Row, [idxEnd0,0], Row1)</l>
+<l>        tuple_select (Col, [idxEnd0,0], Col1)</l>
+<l>    endif</l>
+<c>    </c>
+<l>endif</l>
+<l>get_contour_xld (Seg2, Row, Col)</l>
+<l>idxEnd1 := |Row|-1</l>
+<l>if (idxEnd1 ==1)</l>
+<l>    tuple_select (Row, [0,idxEnd1], Row2)</l>
+<l>    tuple_select (Col, [0,idxEnd1], Col2)</l>
+<l>else</l>
+<l>    angle_ll (Row[0], Col[0], Row[idxEnd1], Col[idxEnd1], row0, col0, row1, col1, Angle2)</l>
+<l>    if (abs(Angle2) &lt; 1)</l>
+<l>        tuple_select (Row, [0,idxEnd1], Row2)</l>
+<l>        tuple_select (Col, [0,idxEnd1], Col2)</l>
+<l>    else</l>
+<l>        tuple_select (Row, [idxEnd1,0], Row2)</l>
+<l>        tuple_select (Col, [idxEnd1,0], Col2)</l>
+<l>    endif</l>
+<l>endif</l>
+<l>distance_pp (Row1[[1,0]], Col1[[1,0]], Row2[[0,1]], Col2[[0,1]], dAll)</l>
+<l>tuple_min (dAll, dMin)</l>
+<l>if (dMin &lt; 1)</l>
+<l>    AngleDist_ := 0</l>
+<l>endif</l>
+<l>tuple_find_first (dAll, dMin, Index)</l>
+<l>if (Index)</l>
+<l>    Row1 := inverse(Row1)</l>
+<l>    Col1 := inverse(Col1)</l>
+<l>    Row2 := inverse(Row2)</l>
+<l>    Col2 := inverse(Col2)</l>
+<l>endif</l>
+<l>* gen_cross_contour_xld (Cross, Row1[1], Col1[1], 6, 0.785398)</l>
+<l>* gen_cross_contour_xld (Cross1, Row2[0], Col2[0], 6, 0.785398)</l>
+<l>tuple_atan2(-(Row1[1]-Row2[0]), (Col1[1]-Col2[0]), angle_)</l>
+<l>if(angle_&lt;0)</l>
+<l>    angle_ := rad(180) + angle_</l>
+<l>endif</l>
+<l>AngleDist := abs(angle_ - Angle)</l>
+<l>tuple_min ([AngleDist, rad(180) - AngleDist], AngleDist_)</l>
+<l>if (dMin &lt; 5)</l>
+<l>    AngleDist_ := 0</l>
+<l>endif</l>
+<l>* distance_pp (Row1[Index], Col1[Index], Row2[Index], Col2[Index], Distance1)</l>
+<l>if (dMin &lt; 5)</l>
+<l>*     ind1 := abs(Index/2*2-2)</l>
+<l>*     ind2 := abs(Index%2-1)</l>
+<l>    angle_ll (Row1[0], Col1[0], Row2[0], Col2[0], \
+              Row1[0], Col1[0], Row2[1], Col2[1], Angle1)</l>
+<l>else    </l>
+<l>    angle_ll (Row1[[0,1]], Col1[[0,1]], Row2[[0,0]], Col2[[0,0]], \
+              Row1[[0,0]], Col1[[0,0]], Row2[[1,1]], Col2[[1,1]], Angle1)</l>
+<l>endif</l>
+<l>tuple_abs (Angle1, AngleAbs)</l>
+<l>* tuple_deg (AngleAbs, Deg)</l>
+<l>tuple_max ([AngleAbs, AngleDist_], AngleMax)</l>
+<l>if (min([idxEnd0,idxEnd1]) ==1)</l>
+<l>    angle_thresh := 1</l>
+<l>else</l>
+<l>    angle_thresh := 0.7</l>
+<l>endif</l>
+<l>if (AngleMax &gt; angle_thresh)</l>
+<l>    AngleMax := 10000</l>
+<l>else</l>
+<l>    AngleMax := 0</l>
+<l>endif</l>
+<l>Distance := (dMin+0.001) * (1 + 4*AngleMax*AngleMax)</l>
+<l>return ()</l>
+</body>
+<docu id="distance_cc_angle">
+<parameters>
+<parameter id="Angle"/>
+<parameter id="Distance"/>
+<parameter id="Seg1"/>
+<parameter id="Seg2"/>
+<parameter id="col0"/>
+<parameter id="col1"/>
+<parameter id="row0"/>
+<parameter id="row1"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

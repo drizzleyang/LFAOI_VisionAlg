@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="LFAOI_inspection">
+<interface>
+<io>
+<par name="ImageIC" base_type="iconic" dimension="0"/>
+<par name="ImagePCB" base_type="iconic" dimension="0"/>
+<par name="ImageLine" base_type="iconic" dimension="0"/>
+<par name="vec_model_object" base_type="iconic" dimension="1"/>
+</io>
+<oo>
+<par name="defect_region" base_type="iconic" dimension="0"/>
+<par name="gold_wire" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="vec_model_tuple" base_type="ctrl" dimension="1"/>
+<par name="vec_inspect_param" base_type="ctrl" dimension="1"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="defect_type" base_type="ctrl" dimension="0"/>
+<par name="err_msg" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>******************************************************************************</c>
+<c>* defect type: 1(pcb match failed), 2(pcb surface defect), 3(ic match failed)\
+*              4(ic surface defect), 5(ic position shift), 6(gold wire defect)\
+*              7(auxiliary ic chipping), 8(comos scratch), 9(capacitor defect)</c>
+<c>******************************************************************************</c>
+<l>iFlag := 0</l>
+<l>err_msg := ''</l>
+<l>defect_type := []</l>
+<l>gen_empty_obj (defect_region)</l>
+<c>********************************************* pcb golden inspect</c>
+<c>* model</c>
+<l>pcb_model_object := vec_model_object.at(0)</l>
+<l>select_obj (pcb_model_object, pcb_dark_thresh_image, 7)</l>
+<l>select_obj (pcb_model_object, pcb_light_thresh_image, 8)</l>
+<l>select_obj (pcb_model_object, pcb_match_region, 3)</l>
+<l>select_obj (pcb_model_object, pcb_inspect_region, 4)</l>
+<l>select_obj (pcb_model_object, pcb_reject_region, 5)</l>
+<l>select_obj (pcb_model_object, pcb_sub_region, 6)</l>
+<l>pcb_ModelID := vec_model_tuple.at(0)[0]</l>
+<l>pcb_model_type := vec_model_tuple.at(0)[1]</l>
+<c>* parameters</c>
+<l>pcb_params := vec_inspect_param.at(0)</l>
+<l>pcb_score_thresh := pcb_params[0]</l>
+<l>pcb_angle_start := pcb_params[1]</l>
+<l>pcb_angle_extent := pcb_params[2]</l>
+<l>pcb_search_size := pcb_params[3]</l>
+<l>pcb_closing_size := pcb_params[4]</l>
+<l>pcb_select_operation := pcb_params[5]</l>
+<l>pcb_width_thresh := pcb_params[6]</l>
+<l>pcb_height_thresh := pcb_params[7]</l>
+<l>pcb_area_thresh := pcb_params[8]</l>
+<l>pcb_sub_reg_num := pcb_params[9]</l>
+<l>inspect_golden_model (ImagePCB, pcb_dark_thresh_image, pcb_light_thresh_image, \
+                      pcb_match_region, pcb_inspect_region, pcb_reject_region, pcb_sub_region, \
+                      pcb_failure_regions, pcb_inspect_region_affine, \
+                      pcb_ModelID, pcb_model_type, pcb_score_thresh, pcb_angle_start, pcb_angle_extent, \
+                      pcb_sub_reg_num, pcb_select_operation, pcb_width_thresh, pcb_height_thresh, pcb_area_thresh, \
+                      pcb_closing_size, pcb_search_size, \
+                      pcb_hom_mat2d, pcb_row, pcb_col, pcb_angle, pcb_iFlag, pcb_ErrMsg)</l>
+<l>if (pcb_iFlag # 0)</l>
+<l>    concat_obj (defect_region, pcb_failure_regions, defect_region)</l>
+<l>    defect_type := [defect_type, 1]</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>else</l>
+<l>    count_obj (pcb_failure_regions, Number)</l>
+<l>    if (Number)</l>
+<l>        union1 (pcb_failure_regions, defect_region_union)</l>
+<l>        concat_obj (defect_region, defect_region_union, defect_region)</l>
+<l>        defect_type := [defect_type, 2]</l>
+<l>    endif    </l>
+<l>endif</l>
+<c>********************************************* ic golden inspect</c>
+<c>* model</c>
+<l>ic_model_object := vec_model_object.at(1)</l>
+<l>select_obj (ic_model_object, ic_dark_thresh_image, 7)</l>
+<l>select_obj (ic_model_object, ic_light_thresh_image, 8)</l>
+<l>select_obj (ic_model_object, ic_match_region, 3)</l>
+<l>select_obj (ic_model_object, ic_inspect_region, 4)</l>
+<l>select_obj (ic_model_object, ic_reject_region, 5)</l>
+<l>select_obj (ic_model_object, ic_sub_region, 6)</l>
+<l>ic_ModelID := vec_model_tuple.at(1)[0]</l>
+<l>ic_model_type := vec_model_tuple.at(1)[1]</l>
+<c>* parameters</c>
+<l>ic_params := vec_inspect_param.at(1)</l>
+<l>ic_score_thresh := ic_params[0]</l>
+<l>ic_angle_start := ic_params[1]</l>
+<l>ic_angle_extent := ic_params[2]</l>
+<l>ic_search_size := ic_params[3]</l>
+<l>ic_closing_size :=ic_params[4]</l>
+<l>ic_select_operation := ic_params[5]</l>
+<l>ic_width_thresh := ic_params[6]</l>
+<l>ic_height_thresh := ic_params[7]</l>
+<l>ic_area_thresh := ic_params[8]</l>
+<l>ic_sub_reg_num := ic_params[9]</l>
+<l>inspect_golden_model (ImageIC, ic_dark_thresh_image, ic_light_thresh_image, \
+                      ic_match_region, ic_inspect_region, ic_reject_region, ic_sub_region, \
+                      ic_failure_regions, ic_inspect_region_affine, \
+                      ic_ModelID, ic_model_type, ic_score_thresh, ic_angle_start, ic_angle_extent, \
+                      ic_sub_reg_num, ic_select_operation, ic_width_thresh, ic_height_thresh, ic_area_thresh, \
+                      ic_closing_size, ic_search_size, \
+                      ic_hom_mat2d, ic_row, ic_col, ic_angle, ic_iFlag, ic_ErrMsg)</l>
+<l>concat_obj (defect_region, ic_failure_regions, defect_region)</l>
+<l>if (ic_iFlag # 0)</l>
+<l>    concat_obj (defect_region, ic_failure_regions, defect_region)</l>
+<l>    defect_type := [defect_type, 3]</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>else</l>
+<l>    count_obj (ic_failure_regions, Number)</l>
+<l>    if (Number)</l>
+<l>        union1 (ic_failure_regions, defect_region_union)</l>
+<l>        concat_obj (defect_region, defect_region_union, defect_region)</l>
+<l>        defect_type := [defect_type, 4]</l>
+<l>    endif</l>
+<l>endif</l>
+<c>********************************************* ic position inspect</c>
+<l>postion_params := vec_inspect_param.at(2)</l>
+<l>row_thresh := postion_params[0]</l>
+<l>col_thresh:= postion_params[1]</l>
+<l>angle_thresh := postion_params[2]</l>
+<l>compare_position (ic_row, ic_col, ic_angle, pcb_row, pcb_col, pcb_angle, \
+                  row_thresh, col_thresh, angle_thresh, \
+                  row_diff, col_diff, angle_diff, ic_pos_iFlag)</l>
+<l>if (ic_pos_iFlag # 0 )    </l>
+<l>    concat_obj (defect_region, ic_inspect_region_affine, defect_region)</l>
+<l>    defect_type := [defect_type, 5]</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<c>********************************************* gold line inspect</c>
+<l>pcb_pad := vec_model_object.at(2)</l>
+<l>ic_pad := vec_model_object.at(3)</l>
+<l>pcb_ball_num := vec_model_tuple.at(2)</l>
+<l>affine_trans_region (pcb_pad, pcb_pad_affine, pcb_hom_mat2d, 'nearest_neighbor')</l>
+<l>affine_trans_region (ic_pad, ic_pad_affine, ic_hom_mat2d, 'nearest_neighbor')</l>
+<c>* params</c>
+<l>line_params := vec_inspect_param.at(3)</l>
+<l>ic_radius_low := line_params[0]</l>
+<l>ic_radius_high := line_params[1]</l>
+<l>pcb_radius_low := line_params[2]</l>
+<l>pcb_radius_high := line_params[3]</l>
+<l>line_num := line_params[4]</l>
+<l>search_len1 := line_params[5]</l>
+<l>line_thresh := line_params[6]</l>
+<l>line_width := line_params[7]</l>
+<l>min_seg_length := line_params[8]</l>
+<l>gold_wire_detect (ImageIC, ImagePCB, ImageLine, ic_pad_affine, pcb_pad_affine, wire_defect_region, gold_wire, line_num, pcb_ball_num, pcb_radius_low, pcb_radius_high, ic_radius_low, ic_radius_high, search_len1, line_thresh, line_width, min_seg_length, gold_wire_iFlag)</l>
+<l>if (gold_wire_iFlag # 0)</l>
+<l>    union1 (wire_defect_region, defect_region_union)</l>
+<l>    concat_obj (defect_region, defect_region_union, defect_region)</l>
+<l>    defect_type := [defect_type, 6]</l>
+<l>endif</l>
+<c>********************************************* chipping inspect</c>
+<l>chipping_region := vec_model_object.at(4)</l>
+<l>chipping_coraseMatch_modelID := vec_model_tuple.at(4)[0]</l>
+<l>chipping_XLD_modelID := vec_model_tuple.at(4)[1]</l>
+<l>*affine_trans_region (chipping_inspect_region, RegionAffineTrans, pcb_hom_mat2d, 'nearest_neighbor')</l>
+<l>select_obj (chipping_region, chipping_inspect_regions, 1)</l>
+<l>count_obj (chipping_inspect_regions, Number)</l>
+<l>select_obj (chipping_region, chipping_XLD_contours, 2)</l>
+<l>chipping_params := vec_inspect_param.at(4)</l>
+<l>inspect_size := chipping_params[0]</l>
+<l>low_thresh := chipping_params[1]</l>
+<l>high_thresh := chipping_params[2]</l>
+<l>opening_size := chipping_params[3]</l>
+<l>area_thresh := chipping_params[4]</l>
+<l>len1_thresh := chipping_params[5]</l>
+<l>len2_thresh := chipping_params[6]</l>
+<l>select_operation := chipping_params[7]</l>
+<l>gen_empty_obj (chipping_defect_region)</l>
+<l>for Index := 1 to Number by 1</l>
+<l>    select_obj (chipping_inspect_regions, inspect_region, Index)</l>
+<l>    select_obj (chipping_XLD_contours, XLD_contour, Index)</l>
+<c>    **************************</c>
+<l>    try</l>
+<l>        find_shape_model (ImagePCB, chipping_coraseMatch_modelID, -0.1, 0.2, 0.1, 1, 0.5, 'least_squares', 0, 0.9, Row4, Column4, Angle1, Score1)</l>
+<l>        vector_angle_to_rigid (0, 0, 0, Row4, Column4, Angle1, HomMat2D1)   </l>
+<l>        affine_trans_region (inspect_region, RegionAffineTrans, HomMat2D1, 'nearest_neighbor')</l>
+<l>        reduce_domain (ImagePCB, RegionAffineTrans, ImageReduced1)</l>
+<l>        find_shape_model (ImageReduced1, chipping_XLD_modelID, -0.1, 0.2, 0.1, 1, 0.5, 'least_squares', 0, 0.9, Row2, Column2, Angle, Score)    </l>
+<l>        vector_angle_to_rigid (0, 0, 0, Row2, Column2, Angle, HomMat2D)</l>
+<l>        affine_trans_contour_xld (XLD_contour, xld, HomMat2D)</l>
+<l>        gen_region_contour_xld (xld, Rectangle, 'filled')</l>
+<l>    catch (Exception)</l>
+<l>        concat_obj (chipping_defect_region, inspect_region, chipping_defect_region)</l>
+<l>        continue</l>
+<l>    endtry</l>
+<c>    </c>
+<l>*      measure_specify_rectangle2 (ImagePCB, inspect_region, Rectangle, 1.5, 0.1, iFlag3)</l>
+<l>*     if (iFlag3 == -1)</l>
+<l>*         concat_obj (chipping_defect_region, inspect_region, chipping_defect_region)</l>
+<l>*         continue</l>
+<l>*     endif</l>
+<l>    inspect_chipping_threshold (ImagePCB, Rectangle, DefectRegionsPCB, inspect_size, 40, 8, low_thresh, opening_size, area_thresh, len1_thresh, len2_thresh, select_operation, iFlag2, ErrMsg)</l>
+<l>    inspect_chipping_threshold (ImageLine, Rectangle, DefectRegionsLine, inspect_size, 5, high_thresh, 15, opening_size, area_thresh, len1_thresh, len2_thresh, select_operation, iFlag2, ErrMsg)</l>
+<l>    inspect_chipping_threshold (ImageIC, Rectangle, DefectRegionsIC, inspect_size, 10, high_thresh, 15, opening_size, area_thresh, len1_thresh, len2_thresh, select_operation, iFlag2, ErrMsg)</l>
+<l>    union2 (DefectRegionsPCB, DefectRegionsLine, RegionUnion)</l>
+<l>    union2 (RegionUnion, DefectRegionsIC, RegionUnion)    </l>
+<l>    union1 (RegionUnion, DefectRegion)</l>
+<l>    concat_obj (chipping_defect_region, DefectRegion, chipping_defect_region)    </l>
+<l>endfor</l>
+<l>count_obj (chipping_defect_region, Number)</l>
+<l>if (Number)</l>
+<l>    union1 (chipping_defect_region, defect_region_union)</l>
+<l>    concat_obj (defect_region, defect_region_union, defect_region)</l>
+<l>    defect_type := [defect_type, 7]</l>
+<l>endif</l>
+<c>********************************************* scratch inspect</c>
+<l>scratch_inspct_region := vec_model_object.at(5)</l>
+<l>affine_trans_region (scratch_inspct_region, RegionAffineTrans, ic_hom_mat2d, 'nearest_neighbor')</l>
+<l>count_obj (RegionAffineTrans, Number)</l>
+<c>* params</c>
+<l>scratc_params := vec_inspect_param.at(5)</l>
+<l>is_gauss :=scratc_params[0]</l>
+<l>line_sigma := scratc_params[1]</l>
+<l>line_low := scratc_params[2]</l>
+<l>line_high := scratc_params[3]</l>
+<l>light_dark := scratc_params[4]</l>
+<l>length_thresh := scratc_params[5]</l>
+<l>mask_size := scratc_params[6]</l>
+<l>sigma_thresh := scratc_params[7]</l>
+<l>gray_thresh := scratc_params[8]</l>
+<l>area_thresh := scratc_params[9]</l>
+<l>len1_thresh := scratc_params[10]</l>
+<l>len2_thresh := scratc_params[11]</l>
+<l>gen_empty_obj (scratch_defect_region)</l>
+<l>for Index := 1 to Number by 1</l>
+<l>    select_obj (RegionAffineTrans, inspect_region, Index)</l>
+<l>    if (Index == 1)</l>
+<l>        inspect_scratch (ImageLine, inspect_region, DefectLines, \
+                         is_gauss, line_sigma, line_low, line_high, light_dark, length_thresh)</l>
+<l>    else</l>
+<l>        inspect_scratch (ImagePCB, inspect_region, DefectLines, \
+                         is_gauss, line_sigma, line_low, line_high, light_dark, length_thresh)</l>
+<l>    endif    </l>
+<l>    count_obj (DefectLines, line_num)</l>
+<l>    if (line_num)</l>
+<l>        smallest_rectangle2_xld (DefectLines, Row, Column, Phi, Length1, Length2)</l>
+<l>        gen_rectangle2 (Rectangle, Row, Column, Phi, Length1+5, Length2+5)</l>
+<l>        concat_obj (scratch_defect_region, Rectangle, scratch_defect_region)        </l>
+<l>    endif    </l>
+<l>endfor</l>
+<l>count_obj (scratch_defect_region, Number)</l>
+<l>if (Number)</l>
+<l>    union1 (Rectangle, defect_region_union)</l>
+<l>    concat_obj (defect_region, defect_region_union, defect_region)</l>
+<l>    defect_type := [defect_type, 8]</l>
+<l>endif</l>
+<c>********************************************* match inspect</c>
+<c>* model</c>
+<l>match_inspect_region := vec_model_object.at(6)</l>
+<c>*[modelID1,modelIDn,modeltype1,modeltypen]</c>
+<l>match_model_tuple := vec_model_tuple.at(6)</l>
+<c>*几种match</c>
+<l>match_num := |match_model_tuple|/4</l>
+<l>match_model_id := match_model_tuple[0:match_num*2-1]</l>
+<l>match_model_type := match_model_tuple[match_num*2:match_num*4-1]</l>
+<c>* params</c>
+<l>match_params := vec_inspect_param.at(6)</l>
+<l>angle_start := match_params[0]</l>
+<l>angle_extent := match_params[1]</l>
+<l>match_thresh := match_params[2:|match_params|-1]</l>
+<l>affine_trans_region (match_inspect_region, RegionAffineTrans, pcb_hom_mat2d, 'nearest_neighbor')</l>
+<c>*一个区域做两次</c>
+<c>*1/2/6</c>
+<l>gen_empty_obj (match_defect_region)</l>
+<l>for Index := 0 to match_num-1 by 1</l>
+<l>    select_obj (RegionAffineTrans, ObjectSelected, Index+1)</l>
+<l>    connection (ObjectSelected, inspect_region)</l>
+<l>    model_id := match_model_id[Index*2]</l>
+<l>    model_type := match_model_type[Index*2]</l>
+<l>    match_thresh_ := match_thresh[Index*2]</l>
+<l>    inspect_matching (ImagePCB, inspect_region, DefectRegions0, \
+                      model_type, model_id, angle_start, angle_extent, match_thresh_, \
+                      MatchScore0, iFlag1, err_msg1)</l>
+<l>    model_id := match_model_id[Index*2+1]</l>
+<l>    model_type := match_model_type[Index*2+1]</l>
+<l>    match_thresh_ := match_thresh[Index*2+1]</l>
+<l>    inspect_matching (ImageLine, inspect_region, DefectRegions1, \
+                      model_type, model_id, angle_start, angle_extent, match_thresh_, \
+                      MatchScore1, iFlag1, err_msg1)</l>
+<l>    intersection (DefectRegions0, DefectRegions1, DefectRegions)</l>
+<l>    concat_obj (match_defect_region, DefectRegions, match_defect_region)</l>
+<l>endfor</l>
+<l>count_obj (match_defect_region, Number)</l>
+<l>if (Number)</l>
+<l>    union1 (DefectRegions, defect_region_union)</l>
+<l>    concat_obj (defect_region, defect_region_union, defect_region)</l>
+<l>    defect_type := [defect_type, 9]</l>
+<l>endif</l>
+<l>if (|defect_type|)</l>
+<l>    iFlag := -1</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="LFAOI_inspection">
+<parameters>
+<parameter id="ImageIC"/>
+<parameter id="ImageLine"/>
+<parameter id="ImagePCB"/>
+<parameter id="defect_region"/>
+<parameter id="defect_type"/>
+<parameter id="err_msg"/>
+<parameter id="gold_wire"/>
+<parameter id="iFlag"/>
+<parameter id="vec_inspect_param"/>
+<parameter id="vec_model_object"/>
+<parameter id="vec_model_tuple"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

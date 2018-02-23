@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="ic_ball_detect">
+<interface>
+<io>
+<par name="ImageIC" base_type="iconic" dimension="0"/>
+<par name="ic_pad_affine" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="ic_ball" base_type="iconic" dimension="0"/>
+<par name="defect_ic_pad" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="line_num" base_type="ctrl" dimension="0"/>
+<par name="ic_radius_low" base_type="ctrl" dimension="0"/>
+<par name="ic_radius_high" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>gen_empty_obj (ic_ball)</l>
+<l>gen_empty_obj (defect_ic_pad)</l>
+<l>is_measure_circle := 1</l>
+<l>get_image_size (ImageIC, Width, Height)</l>
+<l>for Index := 1 to line_num by 1</l>
+<l>    select_obj (ic_pad_affine, ObjectSelected, Index)</l>
+<l>    if (is_measure_circle)</l>
+<l>        area_center (ObjectSelected, Area, Row, Column)</l>
+<l>        create_metrology_model (MetrologyHandle)        </l>
+<l>        set_metrology_model_image_size (MetrologyHandle, Width, Height)  </l>
+<l>        add_metrology_object_circle_measure (MetrologyHandle, Row, Column, 5, 3, 2, \
+                                               1, 30, ['measure_transition','measure_distance','min_score'], ['positive',3,0.6], Index_)</l>
+<l>        apply_metrology_model (ImageIC, MetrologyHandle)</l>
+<l>        get_metrology_object_result (MetrologyHandle, Index_, 'all', 'result_type', \
+                                     'all_param', Circle)</l>
+<l>*         get_metrology_object_measures (Contours, MetrologyHandle, 'all', 'all', Row1, Column1)</l>
+<l>*         gen_cross_contour_xld (Cross, Row1, Column1, 6, 0.785398)</l>
+<l>*         get_metrology_object_result_contour (Contour, MetrologyHandle, Index_, \
+                                             'all', 1.5)</l>
+<l>        clear_metrology_model (MetrologyHandle)</l>
+<l>        if (|Circle| == 3)</l>
+<l>            if (Circle[2] &gt; ic_radius_low and  Circle[2] &lt; ic_radius_high)</l>
+<l>                gen_circle (SelectedRegion, Circle[0], Circle[1], Circle[2])</l>
+<l>            else</l>
+<l>                concat_obj (defect_ic_pad, ObjectSelected, defect_ic_pad)</l>
+<l>                gen_empty_region (SelectedRegion)</l>
+<l>            endif</l>
+<l>        else</l>
+<l>            concat_obj (defect_ic_pad, ObjectSelected, defect_ic_pad)</l>
+<l>            gen_empty_region (SelectedRegion)</l>
+<l>        endif</l>
+<l>        concat_obj (ic_ball, SelectedRegion, ic_ball)</l>
+<l>    else</l>
+<l>        reduce_domain (ImageIC, ObjectSelected, ImageReduced)</l>
+<l>        intensity (ObjectSelected, ImageReduced, Mean, Deviation)</l>
+<l>        threshold (ImageReduced, Region, 0, Mean)</l>
+<l>        fill_up_shape (Region, RegionFillUp, 'area', 1, 100)</l>
+<l>        num := 0</l>
+<l>        opening_size := ic_radius_high</l>
+<l>        while (num # 1 and opening_size &gt;= ic_radius_low)</l>
+<l>            opening_circle (RegionFillUp, RegionOpening, opening_size)</l>
+<l>            opening_size := opening_size-1</l>
+<l>            connection (RegionOpening, ConnectedRegions)</l>
+<l>            select_shape (ConnectedRegions, SelectedRegion, 'area', 'and', 1, 99999)</l>
+<l>            count_obj (SelectedRegion, num)</l>
+<l>        endwhile</l>
+<l>        if (num == 0)</l>
+<l>            gen_empty_obj (SelectedRegion)</l>
+<l>            concat_obj (defect_ic_pad, ObjectSelected, defect_ic_pad)</l>
+<l>            gen_empty_region (SelectedRegion)</l>
+<l>        endif</l>
+<l>        concat_obj (ic_ball, SelectedRegion, ic_ball)</l>
+<l>    endif</l>
+<l>endfor</l>
+<l>count_obj (defect_ic_pad, Number)</l>
+<l>if (Number)</l>
+<l>    iFlag := -1</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="ic_ball_detect">
+<parameters>
+<parameter id="ImageIC"/>
+<parameter id="defect_ic_pad"/>
+<parameter id="iFlag"/>
+<parameter id="ic_ball"/>
+<parameter id="ic_pad_affine"/>
+<parameter id="ic_radius_high"/>
+<parameter id="ic_radius_low"/>
+<parameter id="line_num"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

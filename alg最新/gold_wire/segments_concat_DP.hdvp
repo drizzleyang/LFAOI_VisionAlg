@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="segments_concat_DP">
+<interface>
+<io>
+<par name="Segments" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="Wire" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="angle" base_type="ctrl" dimension="0"/>
+<par name="MaxDist" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>* IMAX:=10000</l>
+<l>Dist := []</l>
+<l>gen_empty_obj (Wire)</l>
+<l>count_obj (Segments, Num_seg)</l>
+<c>******</c>
+<l>select_obj (Segments, ObjectSelected, 1)</l>
+<l>get_contour_xld (ObjectSelected, Row0, Col0)</l>
+<l>row0 := Row0[0]</l>
+<l>col0 := Col0[0]</l>
+<l>select_obj (Segments, ObjectSelected1, Num_seg)</l>
+<l>get_contour_xld (ObjectSelected1, Row1, Col1)</l>
+<l>row1 := Row1[0]</l>
+<l>col1 := Col1[0]</l>
+<l>distance_pp (row0, col0, row1, col1, Distance1)</l>
+<c>******</c>
+<l>tuple_gen_const (Num_seg*Num_seg, 0, Dist)</l>
+<l>tuple_gen_const (Num_seg, 0, flag)</l>
+<l>Num_seg_1 := Num_seg-1</l>
+<c></c>
+<l>idx_temp_1 := 0</l>
+<l>idx_temp_2 := 0</l>
+<l>for idx_k := 1 to Num_seg_1 by 1</l>
+<l>    select_obj (Segments, Seg1, idx_k)</l>
+<l>    idx_temp_1 := (idx_k-1) * Num_seg -1</l>
+<l>    idx_temp_2 := (idx_k-1) - Num_seg</l>
+<l>    for idx_l := idx_k+1 to Num_seg by 1</l>
+<l>        select_obj (Segments, Seg2, idx_l)</l>
+<l>*         distance_cc (Seg1, Seg2, 'point_to_point', Distance, DistanceMax)</l>
+<l>        distance_cc_angle (Seg1, Seg2, angle, row0, col0, row1, col1, Distance)</l>
+<l>        Dist[idx_temp_1 + idx_l] := Distance</l>
+<l>        Dist[idx_temp_2 + idx_l * Num_seg] := Distance</l>
+<l>    endfor</l>
+<l>endfor</l>
+<c></c>
+<l>tuple_gen_const (Num_seg*Num_seg, 0, road)</l>
+<l>distSmall:=Dist[0:Num_seg_1]</l>
+<l>flag[0]:=1</l>
+<l>pos := 0</l>
+<l>tuple_gen_const (Num_seg, 0, road_)</l>
+<c></c>
+<c>* dijkstra algorithm</c>
+<l>for idx_k :=1 to Num_seg_1 by 1</l>
+<l>    dist_min := 10000</l>
+<l>    for idx_l := 1 to Num_seg_1 by 1</l>
+<l>        if(flag[idx_l]=0 and distSmall[idx_l]&lt;dist_min)</l>
+<l>            dist_min := distSmall[idx_l]</l>
+<l>            pos:=idx_l</l>
+<l>        endif</l>
+<l>    endfor</l>
+<l>    flag[pos]:=1</l>
+<l>    road_[idx_k]:=pos</l>
+<l>    for idx_l := 1 to Num_seg_1 by 1</l>
+<l>        if(flag[idx_l]=0 and distSmall[pos]+Dist[pos*Num_seg+idx_l]&lt;distSmall[idx_l])</l>
+<l>            distSmall[idx_l] := distSmall[pos]+Dist[pos*Num_seg+idx_l]</l>
+<l>            road[pos*Num_seg+idx_l]:=1</l>
+<l>            road[idx_l*Num_seg+pos]:=1</l>
+<l>        endif</l>
+<l>    endfor </l>
+<l>endfor</l>
+<c></c>
+<l>tuple_gen_const (Num_seg, 0, pre)</l>
+<l>for idx_k := Num_seg_1 to 1 by -1</l>
+<l>    for idx_l := idx_k-1 to 1 by -1</l>
+<l>        if(road[road_[idx_k] * Num_seg + road_[idx_l]]=1)</l>
+<l>            pre[road_[idx_k]] := road_[idx_l]</l>
+<l>            break</l>
+<l>        endif</l>
+<l>    endfor</l>
+<l>endfor</l>
+<c></c>
+<l>road_now := Num_seg_1</l>
+<l>road_out := [road_now]</l>
+<l>while (road_now &gt; 0)</l>
+<l>    road_now := pre[road_now]</l>
+<l>    road_out := [road_out, road_now]</l>
+<l>endwhile</l>
+<c></c>
+<l>gen_empty_obj (Wires)</l>
+<l>roud_len := |road_out|</l>
+<l>dist_thresh := 10</l>
+<l>for idx_k := roud_len-1 to 0 by -1</l>
+<l>    select_obj (Segments, Seg1, road_out[idx_k]+1)</l>
+<l>    if (idx_k == roud_len-1)</l>
+<l>        length_xld (Seg1, Length)</l>
+<l>        if (Length == 0)</l>
+<l>            select_obj (Segments, Seg2, road_out[idx_k-1]+1)</l>
+<l>            get_contour_xld (Seg1, Row_, Col_)</l>
+<l>            tuple_select (Row_, [0, 0, 0, 0], Row1)</l>
+<l>            tuple_select (Col_, [0, 0, 0, 0], Col1)</l>
+<l>            get_contour_xld (Seg2, Row, Col)</l>
+<l>            idxEnd := |Row|-1</l>
+<l>            tuple_select (Row, [0, idxEnd, 0, idxEnd], Row2)</l>
+<l>            tuple_select (Col, [0, idxEnd, 0, idxEnd], Col2)</l>
+<l>            distance_pp (Row1, Col1, Row2, Col2, dAll)</l>
+<l>            tuple_min (dAll, dMin)</l>
+<l>            tuple_find_first (dAll, dMin, Index)</l>
+<c>            ***********</c>
+<l>            distance_pp (Row_[0], Col_[0], Row2[Index], Col2[Index], DistanceMin)</l>
+<l>            if (DistanceMin &gt; dist_thresh)</l>
+<l>                row_ := Row_[0] + (Row2[Index]-Row_[0])*dist_thresh/DistanceMin</l>
+<l>                col_ := Col_[0] + (Col2[Index]-Col_[0])*dist_thresh/DistanceMin</l>
+<l>                gen_contour_polygon_xld (Seg1, [Row_[0],row_], [Col_[0],col_])</l>
+<l>            else</l>
+<l>                gen_contour_polygon_xld (Seg1, [Row_[0],Row2[Index]], [Col_[0],Col2[Index]])</l>
+<l>            endif            </l>
+<l>        endif</l>
+<l>    endif</l>
+<l>    if (idx_k == 0)</l>
+<l>        length_xld (Seg1, Length)</l>
+<l>        if (Length == 0)</l>
+<l>            select_obj (Segments, Seg2, road_out[1]+1)</l>
+<l>            get_contour_xld (Seg1, Row_, Col_)</l>
+<l>            tuple_select (Row_, [0, 0, 0, 0], Row1)</l>
+<l>            tuple_select (Col_, [0, 0, 0, 0], Col1)</l>
+<l>            get_contour_xld (Seg2, Row, Col)</l>
+<l>            idxEnd := |Row|-1</l>
+<l>            tuple_select (Row, [0, idxEnd, 0, idxEnd], Row2)</l>
+<l>            tuple_select (Col, [0, idxEnd, 0, idxEnd], Col2)</l>
+<l>            distance_pp (Row1, Col1, Row2, Col2, dAll)</l>
+<l>            tuple_min (dAll, dMin)</l>
+<l>            tuple_find_first (dAll, dMin, Index)</l>
+<l>            distance_pp (Row_[0], Col_[0], Row2[Index], Col2[Index], DistanceMin)</l>
+<l>            if (DistanceMin &gt; dist_thresh)</l>
+<l>                row_ := Row_[0] + (Row2[Index]-Row_[0])*dist_thresh/DistanceMin</l>
+<l>                col_ := Col_[0] + (Col2[Index]-Col_[0])*dist_thresh/DistanceMin</l>
+<l>                gen_contour_polygon_xld (Seg1, [Row_[0],row_], [Col_[0],col_])</l>
+<l>            else</l>
+<l>                gen_contour_polygon_xld (Seg1, [Row_[0],Row2[Index]], [Col_[0],Col2[Index]])</l>
+<l>            endif</l>
+<l>        endif</l>
+<l>    endif</l>
+<l>    concat_obj (Wires, Seg1, Wires)</l>
+<l>endfor</l>
+<l>* select_shape_xld (Wires, SelectedXLD, 'area_points', 'and', 2, 999999)</l>
+<l>union_adjacent_contours_xld (Wires, Wire, MaxDist, 1, 'attr_keep')</l>
+<l>select_shape_xld (Wire, Wire, 'contlength', 'and', Distance1, 99999)</l>
+<l>return ()</l>
+</body>
+<docu id="segments_concat_DP">
+<parameters>
+<parameter id="MaxDist"/>
+<parameter id="Segments"/>
+<parameter id="Wire"/>
+<parameter id="angle"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

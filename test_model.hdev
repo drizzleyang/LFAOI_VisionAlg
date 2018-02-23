@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="main">
+<interface/>
+<body>
+<c></c>
+<c>************************</c>
+<c>*REGION 1</c>
+<c>*</c>
+<c>************************</c>
+<c>************************************FUNCTION 2*************************************</c>
+<c>***statement typies</c>
+<c>*single-line comments</c>
+<l>dev_clear_window ()</l>
+<l>dev_set_draw ('margin')</l>
+<c>************************</c>
+<c>*globe path</c>
+<c>*</c>
+<c>************************</c>
+<l>image_path := 'C:/Users/Administrator/Desktop/wafer 模板图像/col39_0'</l>
+<l>model_path := 'C:/Users/Administrator/Desktop/wafer 模板图像/model'</l>
+<l>is_ROTATE := 1</l>
+<l>is_PCB := 1</l>
+<l>stop()</l>
+<c>************************</c>
+<c>*pretreatment</c>
+<c>*</c>
+<c>************************</c>
+<c>***local variables</c>
+<l>refDiePath :='C:/Users/Administrator/Desktop/wafer 模板图像/ref'</l>
+<l>is_ROTATE := 1</l>
+<c>************************************rotate image************************************* </c>
+<l>if(is_ROTATE)</l>
+<l>read_image (ImageIC, refDiePath+'/4_39_2_0.tiff')</l>
+<l>read_image (ImagePCB, refDiePath+'/1.tiff')</l>
+<l>read_image (ImageLINE, refDiePath+'/2.tiff')</l>
+<l>dev_display (ImagePCB)</l>
+<l>draw_line (3600, Row1, Column1, Row2, Column2)</l>
+<l>line_orientation (Row1, Column1, Row2, Column2, Phi)</l>
+<c></c>
+<l>rotate_image (ImageIC, ImageRotate0, -deg(Phi), 'bilinear')</l>
+<l>rotate_image (ImagePCB, ImageRotate1, -deg(Phi), 'bilinear')</l>
+<l>rotate_image (ImageLINE, ImageRotate2, -deg(Phi), 'bilinear')</l>
+<c></c>
+<l>write_image (ImageRotate0, 'tiff', 0, image_path+'/0-0-0.tiff')</l>
+<l>write_image (ImageRotate1, 'tiff', 0, image_path+'/0-0-1.tiff')</l>
+<l>write_image (ImageRotate2, 'tiff', 0, image_path+'/0-0-2.tiff')    </l>
+<l>endif</l>
+<c>**</c>
+<c></c>
+<c>************************</c>
+<c>*globe variables</c>
+<c>*</c>
+<c>************************</c>
+<l>ref_image :=[image_path+'/0-0-0.tiff',image_path+'/0-0-1.tiff',image_path+'/0-0-2.tiff']</l>
+<l>list_image_files ('C:/Users/Administrator/Desktop/wafer 模板图像/col39_0', 'tiff', 'recursive', ImageFiles)</l>
+<l>stop ()</l>
+<c></c>
+<c>************************</c>
+<c>* pcb golden model</c>
+<c>*PCB MeanImage 特地保存 'real',保证dark_golden &amp; light_golden 精度</c>
+<c>************************</c>
+<c>***loacl variables</c>
+<l>pcb_model_path := model_path+'/golden_pcb'</l>
+<l>init_index := 0</l>
+<l>num_level := 0</l>
+<l>angle_start := -0.1</l>
+<l>angle_extent := 0.2</l>
+<l>score_thresh := 0.8</l>
+<l>model_type := 0</l>
+<l>match_dilation_size := 301</l>
+<l>is_refinement := 0</l>
+<l>refine_sigma := 4</l>
+<l>min_training_set := 10 </l>
+<c></c>
+<l>matchRegion_num := 2</l>
+<l>rejectRegion_unm := 9</l>
+<c>***</c>
+<l>if (is_PCB)</l>
+<c>    ************************************read image************************************* </c>
+<l>    file_exists (pcb_model_path, FileExistsPCB)</l>
+<l>    if(FileExistsPCB#1)</l>
+<l>    make_dir (pcb_model_path)</l>
+<l>    endif</l>
+<c></c>
+<l>    tuple_regexp_select (ImageFiles, '_2_0.tiff', SelectionPCB)</l>
+<l>    read_image (refImagePCB, ref_image[1])</l>
+<c>    ************************************draw region************************************* </c>
+<c>    ***Draw Corase Match Region</c>
+<l>    gen_empty_obj (match_region)</l>
+<l>    dev_display (refImagePCB)</l>
+<l>    disp_message (3600, ['Draw Corase Match Region','防止XY方向变形，XY方向各一个'], 'window', 12, 12, ['black','slate blue'], 'true')</l>
+<l>    for IndexPCBMatch := 1 to matchRegion_num by 1</l>
+<l>        draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>        gen_rectangle1 (rectangle, Row1, Column1, Row2, Column2)</l>
+<l>        concat_obj (match_region, rectangle, match_region)</l>
+<l>    endfor</l>
+<c>    </c>
+<c>    ***Draw Golden Region</c>
+<l>    dev_display (refImagePCB)</l>
+<l>    disp_message (3600, ['Draw Golden Region','包含所有PCB检测区域，比检测区域略大一点'], 'window', 12, 12, ['black','slate blue'], 'true')</l>
+<l>    draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (golden_region, Row1, Column1, Row2, Column2)</l>
+<c>    </c>
+<c>    ***Draw Inspect Region</c>
+<l>    dev_display (refImagePCB)</l>
+<l>    disp_message (3600, ['Draw Inspect Region','包含所有PCB检测区域,不超过黄金模板区'], 'window', 12, 12, ['black','slate blue'], 'true')</l>
+<l>    draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (inspect_region, Row1, Column1, Row2, Column2)    </l>
+<c>   </c>
+<c>    ***Draw Reject Region</c>
+<l>    dev_display (refImagePCB)</l>
+<l>    disp_message (3600, ['Draw Reject Region','另检区:电器元件等不同图变化较大的区域','不检区：主IC，非此图检测区'], 'window', 12, 12, ['black','slate blue','slate blue'], 'true')</l>
+<l>    gen_empty_obj (reject_region)</l>
+<l>    for IndexPcbReject := 1 to rejectRegion_unm by 1</l>
+<l>        draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>        gen_rectangle1 (rectangle, Row1, Column1, Row2, Column2)</l>
+<l>        concat_obj (reject_region, rectangle, reject_region)</l>
+<l>    endfor </l>
+<c>    ************************************create &amp;write model************************************* </c>
+<l>    create_golden_model (match_region, golden_region, mean_image, std_image, \
+                         SelectionPCB, init_index, num_level, angle_start, angle_extent, score_thresh, \
+                         model_type, match_dilation_size, is_refinement, refine_sigma, min_training_set, \
+                         iFlag, aligned_number, ModelID) </l>
+<l>    save_golden_model (mean_image, std_image, inspect_region, match_region, reject_region, \
+                       pcb_model_path, ModelID, model_type, iFlag1)</l>
+<l>    clear_model (model_type, ModelID, iFlag2)</l>
+<l>endif</l>
+<l>stop ()</l>
+<c></c>
+<c>************************</c>
+<c>* ic golden model</c>
+<c>*</c>
+<c>************************</c>
+<c>***loacl variables</c>
+<l>ic_model_path := model_path+'/golden_ic'</l>
+<l>    is_train := 1</l>
+<l>    init_index := 0</l>
+<l>    num_level := 0</l>
+<l>    angle_start := -0.1</l>
+<l>    angle_extent := 0.2</l>
+<l>    score_thresh := 0.8</l>
+<l>    model_type := 0</l>
+<l>    match_dilation_size := 1001</l>
+<l>    is_refinement := 0</l>
+<l>    refine_sigma := 3</l>
+<l>    min_training_set := 10</l>
+<l>if (is_train)</l>
+<c>     ************************************read image************************************* </c>
+<l>    file_exists (ImageFiles, FileExistsIC)</l>
+<l>    if(FileExistsIC#1)</l>
+<l>        make_dir (ic_model_path)</l>
+<l>    endif</l>
+<c>    </c>
+<l>    tuple_regexp_select (ImageFiles, '0.tiff', SelectionIC)</l>
+<l>    read_image (refImageIC, ref_image[0])</l>
+<c>     ************************************draw region************************************* </c>
+<c>    ***Draw Match Region</c>
+<l>    dev_display (refImageIC)</l>
+<l>    disp_message (3600, ['Draw Match Region','主IC区内包含灰度明显变化的区域'], 'window', 12, 12, 'black', 'true')</l>
+<l>    draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (match_region, Row1, Column1, Row2, Column2)</l>
+<c>    </c>
+<c>    ***Draw Golden Region</c>
+<l>    dev_display (refImageIC)</l>
+<l>    disp_message (3600, ['Draw Golden Region','包括所有IC检测区域,比检测区域略大'], 'window', 12, 12, ['black','slate blue'], 'true')</l>
+<l>    draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (golden_region, Row1, Column1, Row2, Column2)</l>
+<c>    </c>
+<c>    ***Draw Inspect Region</c>
+<l>    dev_display (refImageIC)</l>
+<l>    disp_message (3600, ['Draw Inspect Region','包括所有IC检测区域,不超过黄金模板区域'], 'window', 12, 12, 'black', 'true')</l>
+<l>    draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (inspect_region, Row1, Column1, Row2, Column2)</l>
+<c>    </c>
+<c>    ***Draw Inspect Region</c>
+<l>    gen_empty_obj (reject_region)</l>
+<c>    ************************************create &amp;write model************************************* </c>
+<l>    create_golden_model (match_region, golden_region, mean_image, std_image, \
+                         SelectionIC, init_index, num_level, angle_start, angle_extent, score_thresh, \
+                         model_type, match_dilation_size, is_refinement, refine_sigma, min_training_set, \
+                         iFlag, aligned_number, ModelID)</l>
+<c>        </c>
+<l>    save_golden_model (mean_image, std_image, inspect_region, match_region, reject_region, \
+                       ic_model_path, ModelID, model_type, iFlag1)</l>
+<l>    clear_model (model_type, ModelID, iFlag2)</l>
+<l>endif</l>
+<l>stop ()</l>
+<c></c>
+<c></c>
+<c>************************</c>
+<c>* gold wire model</c>
+<c>* threshold:min max gray根据实际打光表现调整（球太多，不能定死）</c>
+<c>* closing_rectangle1: size根据实际（球太多，不能定死）</c>
+<c>************************</c>
+<c></c>
+<l>wire_model_path := model_path+ '/gold_line'</l>
+<l>is_train := 1</l>
+<l>pad_num := 47</l>
+<l>line_num := 51</l>
+<l>ball_num_tup := []</l>
+<l>for IndexBall := 0 to pad_num-1 by 1</l>
+<l>    ball_num_tup[IndexBall] :=1</l>
+<l>endfor</l>
+<l>if (is_train)</l>
+<l>    file_exists (ImageFiles, FileExistsLINE)</l>
+<l>    if(FileExistsLINE#1)</l>
+<l>       make_dir (wire_model_path) </l>
+<l>    endif</l>
+<c>************************************PCB ball************************************* </c>
+<l>    read_image (MeanImage, model_path+'/golden_pcb/mean_image.ima')</l>
+<l>    convert_image_type (MeanImage, MeanImagePCB, 'byte')</l>
+<c>    </c>
+<l>    disp_message (3600, ['Draw PCB Pad Region','与IC顺序统一/逆时针逐一/适当拆分'], 'window', 12, 12, ['black','slate blue'], 'true')</l>
+<l>    gen_empty_obj (pcb_pad_region)</l>
+<l>    for Index := 0 to pad_num-1 by 1</l>
+<l>        draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>        gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<l>        reduce_domain (MeanImagePCB, Rectangle, ImageReduced)</l>
+<c>        </c>
+<l>        threshold (ImageReduced, Region, 200, 255)</l>
+<l>        closing_rectangle1 (Region, RegionClosing, 30, 30)</l>
+<l>        fill_up_shape (RegionClosing, RegionFillUp, 'area', 1, 10000)        </l>
+<l>        disp_message (3600, 'Confirm the ball num', 'window', 12, 12, 'black', 'true')</l>
+<l>        stop ()</l>
+<l>        is_mutiBall := 0</l>
+<l>        if(is_mutiBall)</l>
+<c>            *根据多球时实际球数修改</c>
+<l>            ball_num_tup[Index] := 2</l>
+<l>        endif</l>
+<l>        concat_obj (pcb_pad_region, RegionFillUp, pcb_pad_region)</l>
+<l>    endfor</l>
+<c></c>
+<l>    write_region (pcb_pad_region, wire_model_path+'/pcb_pad_region.reg')</l>
+<l>    write_tuple (ball_num_tup, wire_model_path+'/ball_num_list.tup')</l>
+<c>************************************IC ball*************************************     </c>
+<l>    read_image (MeanImage, model_path+'/golden_ic/mean_image.ima')</l>
+<l>    convert_image_type (MeanImage, MeanImageIC, 'byte')</l>
+<c></c>
+<l>    disp_message (3600, 'Draw IC Pad Region', 'window', 12, 12, 'black', 'true')</l>
+<l>    gen_empty_obj (ic_pad_region)</l>
+<l>    for Index := 0 to line_num-1 by 1</l>
+<l>        draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>        gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<l>        reduce_domain (MeanImageIC, Rectangle, ImageReduced)</l>
+<c>        </c>
+<l>        threshold (ImageReduced, Region, 180, 255)</l>
+<l>        closing_rectangle1 (Region, RegionClosing, 30, 30)</l>
+<l>        shape_trans (RegionClosing, RegionTrans, 'convex')</l>
+<l>        opening_rectangle1 (RegionTrans, RegionOpening, 3, 3)</l>
+<l>        smallest_rectangle1 (RegionOpening, Row11, Column11, Row21, Column21)</l>
+<l>        gen_rectangle1 (Rectangle1, Row11, Column11, Row21, Column21)</l>
+<l>*         fill_up_shape (RegionClosing, RegionFillUp, 'area', 1, 10000)</l>
+<l>        stop ()</l>
+<l>        concat_obj (ic_pad_region, Rectangle1, ic_pad_region)</l>
+<l>    endfor</l>
+<l>    write_region (ic_pad_region, wire_model_path+'/ic_pad_region.reg')</l>
+<l>endif</l>
+<l>stop ()</l>
+<c></c>
+<c>************************</c>
+<c>* chipping model</c>
+<c>* 这里暂时只指 驱动IC Chipping</c>
+<c>************************</c>
+<l>read_image (Image, 'I:/信利/20180203/0-1-1/1.tiff')</l>
+<c>**draw measure region</c>
+<l>draw_rectangle2 (3600, Row, Column, Phi, Length1, Length2)</l>
+<l>gen_rectangle2 (MeasureRegion, Row, Column, Phi, Length1, Length2)</l>
+<c>**draw coraseMatch region</c>
+<l>draw_rectangle1 (3600, Row11, Column11, Row21, Column21)</l>
+<l>gen_rectangle1 (CoraseMatchRegion, Row11, Column11, Row21, Column21)</l>
+<c>**draw inspect region</c>
+<l>draw_rectangle1 (3600, Row12, Column12, Row22, Column22)</l>
+<l>gen_rectangle1 (InspectRegion, Row12, Column12, Row22, Column22)</l>
+<c>**para</c>
+<c></c>
+<l>model_path := 'C:/Users/Administrator/Desktop/model/chipping/0'</l>
+<l>MeasureLength1 := 20</l>
+<l>MeasureLength2 := 5</l>
+<l>MeasurSigma := 1</l>
+<l>MeasureThresh := 30</l>
+<l>AngleStart := -0.1</l>
+<l>AngleExtern := 0.2</l>
+<l>MinContrast := 5</l>
+<l>MinScore := 0.5</l>
+<l>Greediness := 0.9</l>
+<c></c>
+<l>CreateChippingModel (Image, MeasureRegion, CoraseMatchRegion, InspectRegion, MeasureLength1, MeasureLength2, MeasurSigma, MeasureThresh, AngleStart, AngleExtern, MinContrast, MinScore, Greediness, model_path)</l>
+<l>stop ()</l>
+<c></c>
+<c></c>
+<c>************************</c>
+<c>* scratch model</c>
+<c>*</c>
+<c>************************</c>
+<l>scratch_model_path := model_path + '/scratch'</l>
+<l>file_exists (ImageFiles, FileExistScratch)</l>
+<l>if (FileExistScratch)</l>
+<l>    make_dir (scratch_model_path)</l>
+<l>endif</l>
+<c></c>
+<l>read_image (MeanImage, model_path+'/golden_pcb/mean_image.ima')</l>
+<l>convert_image_type (MeanImage, MeanImagePCB, 'byte')</l>
+<l>dev_display (MeanImagePCB)</l>
+<l>disp_message (3600, ['Draw Scratch Region','与均值图中主IC大小严格匹配'], 'window', 12, 12, ['black','slate blue'], 'true')</l>
+<l>draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<l>file_exists (ImageFiles, FileExistScratch2)</l>
+<l>if (FileExistScratch2)</l>
+<l>    make_dir (scratch_model_path+'/0')</l>
+<l>endif</l>
+<l>write_region (Rectangle, scratch_model_path+'/0/inspect_region.reg')</l>
+<l>* draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>* gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<l>* draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>* gen_rectangle1 (Rectangle1, Row1, Column1, Row2, Column2)</l>
+<l>* difference (Rectangle1, Rectangle, RegionDifference)</l>
+<l>* make_dir (scratch_model_path+'/1')</l>
+<l>* write_region (RegionDifference, scratch_model_path+'/1/inspect_region.reg')</l>
+<c></c>
+<c>************************</c>
+<c>* match model</c>
+<c>*</c>
+<c>************************</c>
+<c></c>
+<l>match_model_path := model_path + '/match'</l>
+<l>match_num := 3</l>
+<l>angle_tup := []</l>
+<c></c>
+<l>coarseMatchSearchWidth := 1001</l>
+<l>coarseMatchSearchHeight := 1001</l>
+<l>targetSearchWidth := 101</l>
+<l>targetSearchHeight := 101</l>
+<l>lessImage := 10</l>
+<l>tuple_regexp_select (ImageFiles, '2.tiff', SectionLine)</l>
+<l>read_image (ImageLIne, ref_image[2])</l>
+<c></c>
+<c>***Draw coarse matching region</c>
+<l>disp_message (3600, 'Draw coarse matching region', 'window', 20, 20, 'black', 'true')</l>
+<l>draw_rectangle1 (3600, Row12, Column12, Row22, Column22)</l>
+<l>gen_rectangle1 (coarseRegion, Row12, Column12, Row22, Column22)</l>
+<c></c>
+<l>file_exists (match_model_path, FileExists1)</l>
+<l>if(FileExists1#1)</l>
+<l>  make_dir (match_model_path)    </l>
+<l>endif</l>
+<c></c>
+<c>***Draw TargetRegions real_size</c>
+<l>gen_empty_obj (TargetRegions)</l>
+<l>disp_message (3600, 'Draw target region', 'window', 20, 20, 'black', 'true')</l>
+<c></c>
+<l>for Index3 := 0 to match_num-1 by 1</l>
+<l>    dev_display (ImageLIne)</l>
+<l>    disp_message (3600, 'Draw target region:'+[Index3+1], 'window', 20, 20, 'black', 'true')</l>
+<l>    draw_rectangle2 (3600, Row3, Column3, Phi1, Length11, Length21)</l>
+<l>    gen_rectangle2 (tempRegion, Row3, Column3, Phi1, Length11, Length21)</l>
+<l>    concat_obj (TargetRegions, tempRegion, TargetRegions)</l>
+<l>    angle_tup := [angle_tup, deg(Phi1)]</l>
+<l>endfor</l>
+<c>***angle_tup-&gt;[-45,45)</c>
+<l>for Index6 := 0 to |angle_tup|-1 by 1</l>
+<l>    while (angle_tup[Index6]&lt;-45)</l>
+<l>      angle_tup[Index6] := angle_tup[Index6]+90  </l>
+<l>    endwhile</l>
+<l>    while (angle_tup[Index6]&gt;=45)</l>
+<l>      angle_tup[Index6] := angle_tup[Index6]-90   </l>
+<l>    endwhile</l>
+<l>endfor</l>
+<c></c>
+<l>match_angle_start := -0.1</l>
+<l>match_angle_extern := 0.2</l>
+<l>match_score_thresh := 0.3</l>
+<c>*create and write region(line)</c>
+<l>create_part_golden_model (ImageLIne, coarseRegion, TargetRegions, ImageRotate, SectionLine, match_model_path, lessImage, 0, coarseMatchSearchWidth, coarseMatchSearchHeight, match_num, targetSearchWidth, targetSearchHeight, angle_tup, match_angle_start, match_angle_extern, match_score_thresh, iFlagMatch, iErrMsg)</l>
+<c>*draw inspect region</c>
+<l>for Index := 1 to match_num by 1</l>
+<l>    gen_empty_obj (inspect_region)</l>
+<l>    tempNum := 7</l>
+<l>    for Index2 := 1 to tempNum by 1</l>
+<l>        draw_rectangle1 (3600, Row1, Column1, Row2, Column2)</l>
+<l>        gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<l>        concat_obj (inspect_region, Rectangle, inspect_region)</l>
+<l>    endfor</l>
+<l>    write_region (inspect_region, match_model_path+'/'+ Index+ '/inspect_region.reg')</l>
+<l>endfor</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="IF_CreateChippingModel">
+<interface>
+<io>
+<par name="MeasureRegion" base_type="iconic" dimension="0"/>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="CoraseMatchRegion" base_type="iconic" dimension="0"/>
+<par name="InspectRegion" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="Rectangle" base_type="iconic" dimension="0"/>
+<par name="ContoursAffinTrans" base_type="iconic" dimension="0"/>
+<par name="ImageReduced" base_type="iconic" dimension="0"/>
+<par name="ModelContours" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="MeasureLength1" base_type="ctrl" dimension="0"/>
+<par name="MeasureLength2" base_type="ctrl" dimension="0"/>
+<par name="MeasurSigma" base_type="ctrl" dimension="0"/>
+<par name="MeasureThresh" base_type="ctrl" dimension="0"/>
+<par name="Phi" base_type="ctrl" dimension="0"/>
+<par name="AngleStart" base_type="ctrl" dimension="0"/>
+<par name="AngleExtern" base_type="ctrl" dimension="0"/>
+<par name="MinContrast" base_type="ctrl" dimension="0"/>
+<par name="MinScore" base_type="ctrl" dimension="0"/>
+<par name="Greediness" base_type="ctrl" dimension="0"/>
+<par name="model_path" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<c>* *cratem shape model XLD</c>
+<l>smallest_rectangle2 (MeasureRegion, Row5, Column5, Phi1, Length11, Length21)</l>
+<l>create_metrology_model (MetrologyHandle)</l>
+<l>add_metrology_object_rectangle2_measure (MetrologyHandle, Row5, Column5, Phi1, Length11, Length21, MeasureLength1, MeasureLength2, MeasurSigma, MeasureThresh, [], [], Index)</l>
+<l>apply_metrology_model (Image, MetrologyHandle)</l>
+<l>* get_metrology_object_measures (Contours, MetrologyHandle, 'all', 'all', Row1, Column1)</l>
+<l>* gen_cross_contour_xld (Cross, Row1, Column1, 6, Phi)</l>
+<l>get_metrology_object_result (MetrologyHandle, 'all', 'all', 'result_type', 'all_param', Parameter)</l>
+<l>gen_rectangle2_contour_xld (Rectangle, 0, 0, 0, Parameter[3], Parameter[4])</l>
+<c>* </c>
+<l>create_shape_model_xld (Rectangle, 'auto', AngleStart, AngleExtern, 'auto', 'auto', 'ignore_local_polarity', MinContrast, ModelID)</l>
+<c>* *set_metric</c>
+<l>find_shape_model (Image, ModelID, AngleStart, AngleExtern, MinScore, 1, 0.5, 'least_squares', 0, Greediness, Row2, Column2, Angle, Score)</l>
+<l>vector_angle_to_rigid (0, 0, 0, Row2, Column2, Angle, HomMat2D)</l>
+<l>affine_trans_contour_xld (Rectangle, ContoursAffinTrans, HomMat2D)</l>
+<l>set_shape_model_metric (Image, ModelID, HomMat2D, 'use_polarity')</l>
+<c>* *match_model</c>
+<l>reduce_domain (Image, CoraseMatchRegion, ImageReduced)</l>
+<l>* inspect_shape_model (ImageReduced, ModelImages, ModelRegions, 4, 30)</l>
+<l>create_shape_model (ImageReduced, 'auto', -0.1, 0.2, 'auto', 'auto', 'use_polarity', 50, 40, ModelID1)</l>
+<l>get_shape_model_contours (ModelContours, ModelID1, 1)</l>
+<l>area_center (CoraseMatchRegion, Area, Row3, Column3)</l>
+<l>set_shape_model_origin (ModelID1, -Row3, -Column3)</l>
+<c>* </c>
+<c>* *write coraseMatchModel &amp; XLD_shapeModel &amp; inspectRegion &amp; XLD</c>
+<c>* </c>
+<l>write_shape_model (ModelID1, model_path+'/corase_match_model.dat')</l>
+<l>write_shape_model (ModelID, model_path+'/XLD_shape_model.dat')</l>
+<l>write_region (InspectRegion, model_path+'/inspectRegion.reg')</l>
+<l>write_contour_xld_dxf (Rectangle, model_path+'/XLD.dxf')</l>
+<l>return ()</l>
+</body>
+<docu id="IF_CreateChippingModel">
+<parameters>
+<parameter id="AngleExtern"/>
+<parameter id="AngleStart"/>
+<parameter id="ContoursAffinTrans"/>
+<parameter id="CoraseMatchRegion"/>
+<parameter id="Greediness"/>
+<parameter id="Image"/>
+<parameter id="ImageReduced"/>
+<parameter id="InspectRegion"/>
+<parameter id="MeasurSigma"/>
+<parameter id="MeasureLength1"/>
+<parameter id="MeasureLength2"/>
+<parameter id="MeasureRegion"/>
+<parameter id="MeasureThresh"/>
+<parameter id="MinContrast"/>
+<parameter id="MinScore"/>
+<parameter id="ModelContours"/>
+<parameter id="Phi"/>
+<parameter id="Rectangle"/>
+<parameter id="model_path"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

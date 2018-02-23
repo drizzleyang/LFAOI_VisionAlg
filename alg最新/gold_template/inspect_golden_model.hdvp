@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="inspect_golden_model">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="dark_thresh_image" base_type="iconic" dimension="0"/>
+<par name="light_thresh_image" base_type="iconic" dimension="0"/>
+<par name="match_region" base_type="iconic" dimension="0"/>
+<par name="inspect_region" base_type="iconic" dimension="0"/>
+<par name="reject_region" base_type="iconic" dimension="0"/>
+<par name="sub_region" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="failure_regions" base_type="iconic" dimension="0"/>
+<par name="inspect_region_affine" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+<par name="score_thresh" base_type="ctrl" dimension="0"/>
+<par name="angle_start" base_type="ctrl" dimension="0"/>
+<par name="angle_extent" base_type="ctrl" dimension="0"/>
+<par name="sub_reg_num" base_type="ctrl" dimension="0"/>
+<par name="select_operation" base_type="ctrl" dimension="0"/>
+<par name="width_thresh" base_type="ctrl" dimension="0"/>
+<par name="height_thresh" base_type="ctrl" dimension="0"/>
+<par name="area_thresh" base_type="ctrl" dimension="0"/>
+<par name="closing_size" base_type="ctrl" dimension="0"/>
+<par name="match_dilation_size" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="hom_temp2image" base_type="ctrl" dimension="0"/>
+<par name="row" base_type="ctrl" dimension="0"/>
+<par name="col" base_type="ctrl" dimension="0"/>
+<par name="angle" base_type="ctrl" dimension="0"/>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="ErrMsg" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>**************************************************************************************</c>
+<c>*        align Image to mean_image, and inspect the Image, get the failure_regions</c>
+<c>*        in:  Image, match_regions, mean_image, std_image, common_region, reject_region</c>
+<c>*             ModelID, model_type, score_thresh, angle_start, angle_extent, thresh_sigma</c>
+<c>*        out: failure_region, inspect_region, iFlag</c>
+<c>*        pre modification:  yongbang zhou, @15/12/2016</c>
+<c>*        pre modification:  yongbang zhou, @20/12/2016, thresh_image</c>
+<c>*        last modification: yongbang zhou, @01/03/2017, multiple regions and parameters</c>
+<c>*        next modification: delete parameters: dark_thresh, light_thesh</c>
+<c>*************************************************************************************</c>
+<l>iFlag := 0</l>
+<l>ErrMsg := ''</l>
+<l>gen_empty_obj (failure_regions)</l>
+<l>try</l>
+<c>    * align image</c>
+<l>    match_region_dilation (match_region, MatchRegionDilation, match_dilation_size)</l>
+<l>    align_image (Image, MatchRegionDilation, ImageAffinTrans, \
+                 model_type, ModelID, angle_start, angle_extent, score_thresh, \
+                 iFlag, hom_temp2image, row, col, angle)</l>
+<c></c>
+<c>    * inspect image</c>
+<l>    if (iFlag == -1)</l>
+<l>        copy_obj (MatchRegionDilation, failure_regions, 1, -1)</l>
+<l>        ErrMsg := 'match failed'</l>
+<l>        return()</l>
+<l>    endif</l>
+<l>    reduce_domain (ImageAffinTrans, inspect_region, ImageAffinTrans)</l>
+<l>    affine_trans_region (inspect_region, inspect_region_affine, hom_temp2image, 'nearest_neighbor')</l>
+<l>    dyn_threshold (ImageAffinTrans, dark_thresh_image, Region_dark, 1, 'dark')</l>
+<l>    dyn_threshold (ImageAffinTrans, light_thresh_image, Region_light, 1, 'light')</l>
+<l>    union2 (Region_dark, Region_light, RegionUnion)</l>
+<l>    difference (RegionUnion, reject_region, RegionDifference)</l>
+<l>    width_thresh := width_thresh*0.5</l>
+<l>    height_thresh := height_thresh*0.5</l>
+<l>    if (sub_reg_num = 0)</l>
+<l>        closing_rectangle1 (RegionDifference, RegionClosing, closing_size, closing_size)</l>
+<l>        connection (RegionClosing, ConnectedRegions)</l>
+<l>        select_shape (ConnectedRegions, SelectedRegions, ['rect2_len1','rect2_len2','area'], select_operation, [width_thresh,height_thresh,area_thresh], [999999,999999,9999999])</l>
+<l>        affine_trans_region (SelectedRegions, failure_regions, hom_temp2image, 'nearest_neighbor')</l>
+<l>    else</l>
+<l>        closing_rectangle1 (RegionDifference, RegionClosing1, min(closing_size), min(closing_size))</l>
+<l>        connection (RegionClosing1, ConnectedRegions1)</l>
+<l>        select_shape (ConnectedRegions1, SelectedRegions, ['rect2_len1','rect2_len2','area'], select_operation, [min(width_thresh),min(height_thresh),min(area_thresh)], [999999,999999,9999999])</l>
+<l>        count_obj (SelectedRegions, Number)</l>
+<l>        gen_empty_region (EmptyRegion)</l>
+<l>        for Index := 0 to sub_reg_num by 1</l>
+<l>            select_obj (sub_region, ObjectSelected, Index+1)</l>
+<l>            area_center (ObjectSelected, Area1, Row1, Column1)</l>
+<l>            if (Area1 &lt; 1)</l>
+<l>                concat_obj (failure_regions, EmptyRegion, failure_regions)</l>
+<l>                continue</l>
+<l>            endif</l>
+<l>            gen_empty_obj (RegionReduced)</l>
+<l>            for Index1 := 1 to Number by 1</l>
+<l>                select_obj (SelectedRegions, ObjectSelected1, Index1)</l>
+<l>                intersection (ObjectSelected, ObjectSelected1, RegionIntersection)</l>
+<l>                area_center (RegionIntersection, Area, Row, Column)</l>
+<l>                if (Area &gt; 0)</l>
+<l>                    union2 (RegionReduced, ObjectSelected1, RegionReduced)</l>
+<l>                endif</l>
+<l>            endfor</l>
+<l>            closing_rectangle1 (RegionReduced, RegionClosing, closing_size[Index], closing_size[Index])</l>
+<l>            connection (RegionClosing, ConnectedRegions)</l>
+<l>            select_shape (ConnectedRegions, SelectedRegions_, ['rect2_len1','rect2_len2','area'], select_operation, [width_thresh[Index],height_thresh[Index],area_thresh[Index]], [999999,999999,999999])</l>
+<l>            affine_trans_region (SelectedRegions_, RegionAffineTrans, hom_temp2image, 'nearest_neighbor')</l>
+<l>            union2 (RegionAffineTrans,EmptyRegion,_failure_regions)            </l>
+<l>            concat_obj (failure_regions, _failure_regions, failure_regions)</l>
+<l>        endfor</l>
+<l>    endif    </l>
+<l>catch (Exception)</l>
+<l>    iFlag := -1</l>
+<l>    copy_obj (MatchRegionDilation, failure_regions, 1, -1)</l>
+<l>    ErrMsg := 'other halcon exception'</l>
+<l>endtry</l>
+<l>return ()</l>
+</body>
+<docu id="inspect_golden_model">
+<parameters>
+<parameter id="ErrMsg"/>
+<parameter id="Image"/>
+<parameter id="ModelID"/>
+<parameter id="angle"/>
+<parameter id="angle_extent"/>
+<parameter id="angle_start"/>
+<parameter id="area_thresh"/>
+<parameter id="closing_size"/>
+<parameter id="col"/>
+<parameter id="dark_thresh_image"/>
+<parameter id="failure_regions"/>
+<parameter id="height_thresh"/>
+<parameter id="hom_temp2image"/>
+<parameter id="iFlag"/>
+<parameter id="inspect_region"/>
+<parameter id="inspect_region_affine"/>
+<parameter id="light_thresh_image"/>
+<parameter id="match_dilation_size"/>
+<parameter id="match_region"/>
+<parameter id="model_type"/>
+<parameter id="reject_region"/>
+<parameter id="row"/>
+<parameter id="score_thresh"/>
+<parameter id="select_operation"/>
+<parameter id="sub_reg_num"/>
+<parameter id="sub_region"/>
+<parameter id="width_thresh"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

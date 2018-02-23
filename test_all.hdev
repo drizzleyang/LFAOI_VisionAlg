@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_set_draw ('margin')</l>
+<l>set_system ('width', 4096)</l>
+<l>set_system ('height', 4096)</l>
+<c>* model_path是模板目录</c>
+<l>model_path := 'I:/信利/model_2.8'</l>
+<c>************************ 检测参数 **************************</c>
+<l>vec_model_param := {[]}</l>
+<l>vec_model_param.clear()</l>
+<l>vec_model_param.at(0) := model_path </l>
+<l>vec_inspect_param := {[]}</l>
+<l>vec_inspect_param.clear()</l>
+<c>* pcb黄金模板比对</c>
+<l>pcb_sub_reg_num :=0</l>
+<l>pcb_sobel_scale := 0.5</l>
+<l>pcb_dark_thresh := 15</l>
+<l>pcb_light_thresh := 25</l>
+<l>vec_model_param.at(1) := [pcb_sub_reg_num, pcb_sobel_scale, pcb_dark_thresh, pcb_light_thresh]</l>
+<l>pcb_score_thresh := 0.6</l>
+<l>pcb_angle_start := -0.1</l>
+<l>pcb_angle_extent := 0.2</l>
+<l>pcb_search_size := 1001</l>
+<l>pcb_closing_size := 3</l>
+<l>pcb_select_operation := 'and'</l>
+<l>pcb_width_thresh := 50</l>
+<l>pcb_height_thresh := 50</l>
+<l>pcb_area_thresh := 4000</l>
+<l>vec_inspect_param.at(0) := [pcb_score_thresh, pcb_angle_start, pcb_angle_extent, pcb_search_size, \
+                     pcb_closing_size, pcb_select_operation, pcb_width_thresh, pcb_height_thresh, pcb_area_thresh, pcb_sub_reg_num] </l>
+<c>* ic黄金模板比对</c>
+<l>ic_sub_reg_num :=0</l>
+<l>ic_sobel_scale := 0.5</l>
+<l>ic_dark_thresh := 15</l>
+<l>ic_light_thresh := 25</l>
+<l>vec_model_param.at(2) := [ic_sub_reg_num, ic_sobel_scale, ic_dark_thresh, ic_light_thresh]</l>
+<l>ic_score_thresh := 0.6</l>
+<l>ic_angle_start := -0.1</l>
+<l>ic_angle_extent := 0.2</l>
+<l>ic_search_size := 2001</l>
+<l>ic_closing_size := 1</l>
+<l>ic_select_operation := 'and'</l>
+<l>ic_width_thresh := 20</l>
+<l>ic_height_thresh := 20</l>
+<l>ic_area_thresh := 225</l>
+<l>vec_inspect_param.at(1) := [ic_score_thresh, ic_angle_start, ic_angle_extent, ic_search_size, \
+                     ic_closing_size, ic_select_operation, ic_width_thresh, ic_height_thresh, ic_area_thresh, ic_sub_reg_num]</l>
+<c>* ic偏移检测</c>
+<l>pos_row_thresh := 20</l>
+<l>pos_col_thresh := 20</l>
+<l>pos_angle_thresh := 0.015</l>
+<l>vec_inspect_param.at(2) := [pos_row_thresh, pos_col_thresh, pos_angle_thresh]</l>
+<c>* 金线检测</c>
+<l>line_ic_radius_low := 3</l>
+<l>line_ic_radius_high := 7</l>
+<l>line_pcb_radius_low := 5</l>
+<l>line_pcb_radius_high := 9</l>
+<l>line_num := 76</l>
+<l>line_search_len1 := 10</l>
+<l>line_contrast := 20</l>
+<l>line_width := 4</l>
+<l>line_min_seg_length := 3</l>
+<l>vec_inspect_param.at(3) := [line_ic_radius_low, line_ic_radius_high, line_pcb_radius_low, line_pcb_radius_high, line_num, line_search_len1, line_contrast, line_width, line_min_seg_length]</l>
+<c>* 崩边检测</c>
+<l>chipping_inspect_size := 40</l>
+<l>chipping_light_thresh := 5</l>
+<l>chipping_dark_thresh := 5</l>
+<l>chipping_opening_size := 3</l>
+<l>chipping_area_thresh := 60</l>
+<l>chipping_len1_thresh := 6</l>
+<l>chipping_len2_thresh := 3</l>
+<l>chipping_select_operation := 'and'</l>
+<l>vec_inspect_param.at(4) := [chipping_inspect_size,chipping_light_thresh,chipping_dark_thresh,chipping_opening_size,chipping_area_thresh,chipping_len1_thresh,chipping_len2_thresh,chipping_select_operation]</l>
+<c>* 划痕检测</c>
+<l>scratch_is_gauss := 1</l>
+<l>scratch_line_sigma := 1</l>
+<l>scratch_line_low := 1</l>
+<l>scratch_line_high := 2</l>
+<l>scratch_light_dark := 'light'</l>
+<l>scratch_length_thresh := 20</l>
+<l>scratch_mask_size := 51</l>
+<l>scratch_sigma_thresh := 3</l>
+<l>scratch_gray_thresh := 5</l>
+<l>scratch_area_thresh := 4</l>
+<l>scratch_len1_thresh := 1</l>
+<l>scratch_len2_thresh := 0.8</l>
+<l>vec_inspect_param.at(5) := [scratch_is_gauss,scratch_line_sigma,scratch_line_low,scratch_line_high,scratch_light_dark,scratch_length_thresh,scratch_mask_size,scratch_sigma_thresh,\
+                     scratch_gray_thresh,scratch_area_thresh,scratch_len1_thresh,scratch_len2_thresh]</l>
+<c>* 模板比对外观检测</c>
+<l>match_angle_start := -0.1</l>
+<l>match_angle_extent := 0.2</l>
+<l>match_thresh := [0.4,0.5,0.45,0.45,0.6,0.5]</l>
+<l>vec_inspect_param.at(6) := [match_angle_start,match_angle_extent,match_thresh]</l>
+<l>stop ()</l>
+<c>*********************** load model ***************************</c>
+<l>LFAOI_load_all_model (vec_model_object, vec_model_param, vec_model_tuple, iFlag_model, err_msg)</l>
+<l>if (iFlag_model # 0)</l>
+<l>    set_display_font (3600, 24, 'mono', 'true', 'false')</l>
+<l>    disp_message (3600, err_msg, 'window', 12, 12, 'red', 'true')</l>
+<l>endif</l>
+<l>is_update := 0</l>
+<l>if (is_update)</l>
+<c>    * pcb model param</c>
+<l>    pcb_sub_reg_num :=0</l>
+<l>    pcb_sobel_scale := 0.5</l>
+<l>    pcb_dark_thresh := 4.0</l>
+<l>    pcb_light_thresh := 3</l>
+<l>    vec_model_param.at(1) := [pcb_sub_reg_num, pcb_sobel_scale, pcb_dark_thresh, pcb_light_thresh]</l>
+<c>    * ic model param</c>
+<l>    ic_sub_reg_num :=0</l>
+<l>    ic_sobel_scale := 0.5</l>
+<l>    ic_dark_thresh := 5</l>
+<l>    ic_light_thresh := 3</l>
+<l>    vec_model_param.at(2) := [ic_sub_reg_num, ic_sobel_scale, ic_dark_thresh, ic_light_thresh]</l>
+<l>    LFAOI_update_thresh_image (vec_model_object, pcb_golden_model, ic_golden_model, vec_model_param, iFlag2)</l>
+<l>    vec_model_object.at(0) := pcb_golden_model</l>
+<l>    vec_model_object.at(1) := ic_golden_model</l>
+<l>endif</l>
+<l>stop ()</l>
+<c>*********************** test *********************************</c>
+<c>* 这个是存图像的地址，根据需要更改</c>
+<l>data_path := 'I:/信利/20180208/图像2/异常'</l>
+<l>list_files (data_path, 'directories', Dres)</l>
+<l>for dir_ind :=0 to |Dres|-1 by 1</l>
+<l>    path :=Dres[dir_ind]</l>
+<l>    read_image (ImageIC, path+'0.tiff')</l>
+<l>    read_image (ImagePCB, path+'1.tiff')</l>
+<l>    read_image (ImageLine, path+'2.tiff')</l>
+<l>    LFAOI_inspection (ImageIC, ImagePCB, ImageLine, vec_model_object, defect_region, gold_wire, vec_model_tuple, vec_inspect_param, iFlag, defect_type, err_msg1)</l>
+<l>    if (iFlag == 0)</l>
+<l>        dev_clear_window ()</l>
+<l>        dev_set_line_width (1)</l>
+<l>        dev_set_color ('green')</l>
+<l>        dev_display (ImageLine)</l>
+<l>        set_display_font (3600, 64, 'mono', 'true', 'false')</l>
+<l>        disp_message (3600, 'OK', 'window', 12, 12, 'green', 'true')</l>
+<l>    else</l>
+<l>*         smallest_rectangle2 (defect_region, Row, Column, Phi, Length1, Length2)</l>
+<l>*         gen_rectangle2 (Rectangle, Row, Column, Phi, Length1+5, Length2+5)</l>
+<l>        dev_clear_window ()</l>
+<l>        dev_display (ImageLine)</l>
+<l>        set_display_font (3600, 64, 'mono', 'true', 'false')</l>
+<l>        disp_message (3600, 'NG', 'window', 12, 12, 'red', 'true')</l>
+<l>        dev_set_line_width (1)</l>
+<l>        dev_set_color ('red')</l>
+<l>        dev_display (defect_region)</l>
+<l>        dev_set_line_width (1)</l>
+<l>    endif</l>
+<l>    dev_display (gold_wire)</l>
+<l>*     dump_window (3600, 'tiff', path+'result.tiff')</l>
+<l>   stop ()</l>
+<l>    wait_seconds (0.5)</l>
+<l>endfor</l>
+<l>stop ()</l>
+<c>* clear all models</c>
+<l>LFAOI_clear_all_model (vec_model_tuple, iFlag1)</l>
+<l>vec_model_object.clear()</l>
+<l>* clear_all_matching_models ()</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="extract_balls">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="Balls" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="thr" base_type="ctrl" dimension="0"/>
+<par name="open_radius" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>threshold (Image, Region, 0, thr)</l>
+<l>opening_circle (Region, Balls, open_radius)</l>
+<l>connection (Balls, SingleBalls)</l>
+<l>select_shape (SingleBalls, Balls, 'area', 'and', 30, 200)</l>
+<c></c>
+<l>return ()</l>
+</body>
+<docu id="extract_balls">
+<parameters>
+<parameter id="Balls"/>
+<parameter id="Image"/>
+<parameter id="open_radius"/>
+<parameter id="thr"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="union_collinear_wire_segments">
+<interface>
+<io>
+<par name="Segments" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="UnionContours" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="MaxIterations" base_type="ctrl" dimension="0"/>
+<par name="MaxAngle" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<c>* Usually there are dark areas around the chip corresponding to shadows</c>
+<c>* which give rise to gaps when tracking the wire. We need to overcome such</c>
+<c>* gaps by joining separate segments.</c>
+<c>* </c>
+<c>* The idea of the lines below is the following: the longer the segments are,</c>
+<c>* the higher are the chances that those segments actually correspond to a</c>
+<c>* wire and, therefore, we decide to join them even when the separation among</c>
+<c>* them is bigger</c>
+<c></c>
+<l>count_obj (Segments, Number)</l>
+<l>if(Number&lt;2)</l>
+<l>    copy_obj (Segments, UnionContours, 1, -1)</l>
+<l>    return()</l>
+<l>endif</l>
+<c></c>
+<l>length_xld (Segments, Lengths)</l>
+<l>MaxDistAbs := max(Lengths)</l>
+<l>MaxDistRel := max(Lengths) / min(Lengths)</l>
+<l>union_collinear_contours_ext_xld (Segments, UnionContours, MaxDistAbs, MaxDistRel, 5, MaxAngle, 0, -1, 1, 1, 1, 1, 1, 0, 'attr_keep')</l>
+<c>* </c>
+<l>Iter := 0</l>
+<l>length_xld (UnionContours, Lengths)</l>
+<l>while (Iter &lt; MaxIterations and |Lengths| &gt; 1)</l>
+<l>    MaxDistAbs := 0.4 * max(Lengths)</l>
+<l>    MaxDistRel := 0.1 * max(Lengths) / min(Lengths)</l>
+<l>    union_collinear_contours_ext_xld (UnionContours, UnionContours, MaxDistAbs, MaxDistRel, 5, MaxAngle, 0, -1, 1, 1, 1, 1, 1, 0, 'attr_keep')</l>
+<l>    Iter := Iter + 1</l>
+<l>endwhile</l>
+<l>return ()</l>
+</body>
+<docu id="union_collinear_wire_segments">
+<parameters>
+<parameter id="MaxAngle"/>
+<parameter id="MaxIterations"/>
+<parameter id="Segments"/>
+<parameter id="UnionContours"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="lines_gauss_iter">
+<interface>
+<io>
+<par name="ImageReduced" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="SelectedContours" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="HighThreshold" base_type="ctrl" dimension="0"/>
+<par name="LineWidth" base_type="ctrl" dimension="0"/>
+<par name="MinSegLength" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>NXLDs := 0</l>
+<l>while (NXLDs == 0 and HighThreshold &gt;= 0.1)</l>
+<l>    lines_gauss (ImageReduced, Lines, LineWidth / sqrt(3), 0.05, HighThreshold, 'dark', 'true', 'true', 'true')</l>
+<l>    select_contours_xld (Lines, SelectedContours, 'contour_length', MinSegLength, 800, -0.5, 0.5)</l>
+<l>    count_obj (SelectedContours, NXLDs)</l>
+<l>    HighThreshold := 0.5 * HighThreshold</l>
+<l>endwhile</l>
+<l>return ()</l>
+</body>
+<docu id="lines_gauss_iter">
+<parameters>
+<parameter id="HighThreshold"/>
+<parameter id="ImageReduced"/>
+<parameter id="LineWidth"/>
+<parameter id="MinSegLength"/>
+<parameter id="SelectedContours"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

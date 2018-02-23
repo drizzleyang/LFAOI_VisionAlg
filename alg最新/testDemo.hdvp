@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="testDemo">
+<interface>
+<io>
+<par name="inspectRegion" base_type="iconic" dimension="0"/>
+<par name="Image" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="SelectedRegion" base_type="iconic" dimension="0"/>
+<par name="ImageReduced" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="windowHandel" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="Number" base_type="ctrl" dimension="0"/>
+<par name="Index" base_type="ctrl" dimension="0"/>
+<par name="Row" base_type="ctrl" dimension="0"/>
+<par name="Column" base_type="ctrl" dimension="0"/>
+<par name="Angle" base_type="ctrl" dimension="0"/>
+<par name="Score" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>count_obj (inspectRegion, Number)</l>
+<l>for Index := 1 to Number by 1</l>
+<l>    select_obj (inspectRegion, SelectedRegion, Index)</l>
+<l>    reduce_domain (Image, SelectedRegion, ImageReduced)</l>
+<l>    find_shape_model (ImageReduced, ModelID, -0.1, 0.2, 0.5, 1, 0.5, 'least_squares', 0, 0.9, Row, Column, Angle, Score)</l>
+<l>    disp_cross (windowHandel, Row, Column, 120, 0.79)</l>
+<l>    disp_message (windowHandel, Score, 'image', Row-200, Column-300, 'red', 'true')</l>
+<l>endfor</l>
+<l>return ()</l>
+</body>
+<docu id="testDemo">
+<parameters>
+<parameter id="Angle"/>
+<parameter id="Column"/>
+<parameter id="Image"/>
+<parameter id="ImageReduced"/>
+<parameter id="Index"/>
+<parameter id="ModelID"/>
+<parameter id="Number"/>
+<parameter id="Row"/>
+<parameter id="Score"/>
+<parameter id="SelectedRegion"/>
+<parameter id="inspectRegion"/>
+<parameter id="windowHandel"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

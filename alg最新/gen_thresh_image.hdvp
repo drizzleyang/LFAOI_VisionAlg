@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="gen_thresh_image">
+<interface>
+<io>
+<par name="mean_image" base_type="iconic" dimension="0"/>
+<par name="std_image" base_type="iconic" dimension="0"/>
+<par name="sub_region" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="dark_thresh_image" base_type="iconic" dimension="0"/>
+<par name="light_thresh_image" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="sub_reg_num" base_type="ctrl" dimension="0"/>
+<par name="thresh_dark" base_type="ctrl" dimension="0"/>
+<par name="thresh_light" base_type="ctrl" dimension="0"/>
+<par name="sobel_scale" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>try</l>
+<l>    sobel_amp (mean_image, EdgeAmplitude, 'sum_abs', 5)</l>
+<l>    gen_image_proto (mean_image, ImageCleared, 0)</l>
+<l>    convert_image_type (ImageCleared, dark_thresh_image, 'byte')</l>
+<l>    gen_image_proto (dark_thresh_image, light_thresh_image, 0)</l>
+<l>    for index := 0 to sub_reg_num by 1</l>
+<l>        select_obj (sub_region, sub_region_, index+1)</l>
+<l>        scale_image (EdgeAmplitude, ImageScaled, sobel_scale[index], 0)</l>
+<l>        add_image (std_image, ImageScaled, ImageResult, 1, 0)</l>
+<l>        scale_image (ImageResult, ImageScaled_D, thresh_dark[index], 0)</l>
+<l>        sub_image (mean_image, ImageScaled_D, ImageSub_D, 1, 0)</l>
+<l>        convert_image_type (ImageSub_D, _sub_dark_thresh_image, 'byte')</l>
+<l>        scale_image (ImageResult, ImageScaled_L, thresh_light[index], 0)</l>
+<l>        add_image (mean_image, ImageScaled_L, ImageSub_L, 1, 0)</l>
+<l>        convert_image_type (ImageSub_L, _sub_light_thresh_image, 'byte')</l>
+<l>        reduce_domain (_sub_dark_thresh_image, sub_region_, dark_image_reduce)</l>
+<l>        paint_gray (dark_image_reduce, dark_thresh_image, dark_thresh_image)</l>
+<l>        reduce_domain (_sub_light_thresh_image, sub_region_, light_image_reduce)</l>
+<l>        paint_gray (light_image_reduce, light_thresh_image, light_thresh_image)</l>
+<l>    endfor</l>
+<l>catch (Exception)</l>
+<l>    iFlag := -1</l>
+<l>endtry</l>
+<l>return ()</l>
+</body>
+<docu id="gen_thresh_image">
+<parameters>
+<parameter id="dark_thresh_image"/>
+<parameter id="iFlag"/>
+<parameter id="light_thresh_image"/>
+<parameter id="mean_image"/>
+<parameter id="sobel_scale"/>
+<parameter id="std_image"/>
+<parameter id="sub_reg_num"/>
+<parameter id="sub_region"/>
+<parameter id="thresh_dark"/>
+<parameter id="thresh_light"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

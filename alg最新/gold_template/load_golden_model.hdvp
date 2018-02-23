@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="load_golden_model">
+<interface>
+<oo>
+<par name="mean_image" base_type="iconic" dimension="0"/>
+<par name="std_image" base_type="iconic" dimension="0"/>
+<par name="match_region" base_type="iconic" dimension="0"/>
+<par name="inspect_region" base_type="iconic" dimension="0"/>
+<par name="reject_region" base_type="iconic" dimension="0"/>
+<par name="sub_region" base_type="iconic" dimension="0"/>
+<par name="dark_thresh_image" base_type="iconic" dimension="0"/>
+<par name="light_thresh_image" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="folder_name" base_type="ctrl" dimension="0"/>
+<par name="sub_reg_num" base_type="ctrl" dimension="0"/>
+<par name="sobel_scale" base_type="ctrl" dimension="0"/>
+<par name="thresh_dark" base_type="ctrl" dimension="0"/>
+<par name="thresh_light" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>ModelID := []</l>
+<l>model_type := []</l>
+<l>gen_empty_obj (std_image)</l>
+<l>gen_empty_obj (mean_image)</l>
+<l>gen_empty_obj (match_region)</l>
+<l>gen_empty_obj (inspect_region)</l>
+<l>gen_empty_obj (reject_region)</l>
+<l>gen_empty_obj (sub_region)</l>
+<l>read_model (show_contour, folder_name, model_type, ModelID, def_row, def_col, iFlag)</l>
+<l>if (iFlag = -1)</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>file_exists (folder_name+'/std_image.ima', FileExists)</l>
+<l>if (FileExists)</l>
+<l>    read_image (std_image, folder_name+'/std_image.ima')</l>
+<l>endif</l>
+<l>count_obj (std_image, Number)</l>
+<l>if (Number=0)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>file_exists (folder_name+'/mean_image.ima', FileExists)</l>
+<l>if (FileExists)</l>
+<l>    read_image (mean_image, folder_name+'/mean_image.ima')</l>
+<l>endif</l>
+<l>count_obj (mean_image, Number)</l>
+<l>if (Number=0)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>file_exists (folder_name+'/match_region.reg', FileExists)</l>
+<l>if (FileExists)</l>
+<l>    read_region (match_region, folder_name+'/match_region.reg')</l>
+<l>    union1 (match_region, match_region)</l>
+<l>endif</l>
+<l>count_obj (match_region, Number)</l>
+<l>if (Number=0)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>file_exists (folder_name+'/inspect_region.reg', FileExists)</l>
+<l>if (FileExists)</l>
+<l>    read_region (inspect_region, folder_name+'/inspect_region.reg')</l>
+<l>endif</l>
+<l>count_obj (inspect_region, Number)</l>
+<l>if (Number=0)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>file_exists (folder_name+'/reject_region.reg', FileExists)</l>
+<l>if (FileExists)</l>
+<l>    read_region (reject_region, folder_name+'/reject_region.reg')</l>
+<l>    union1 (reject_region, reject_region)</l>
+<l>endif</l>
+<l>count_obj (reject_region, Number)</l>
+<l>if (Number =0)</l>
+<l>    gen_empty_region (reject_region)</l>
+<l>endif</l>
+<l>for Index := 0 to sub_reg_num-1 by 1</l>
+<l>    file_exists (folder_name+'/sub_region_'+Index+'.reg', FileExists)</l>
+<l>    if (FileExists)</l>
+<l>        read_region (sub_insp_reg, folder_name+'/sub_region_'+Index+'.reg')</l>
+<l>        union1 (sub_insp_reg, sub_insp_reg)</l>
+<l>    else</l>
+<l>        iFlag := -1</l>
+<l>        return ()</l>
+<l>    endif</l>
+<l>    count_obj (sub_insp_reg, Number)</l>
+<l>    if (Number=0)</l>
+<l>        gen_empty_region (sub_insp_reg)</l>
+<l>    endif</l>
+<l>    concat_obj (sub_region, sub_insp_reg, sub_region)</l>
+<l>endfor</l>
+<l>difference (inspect_region, sub_region, RegionDifference)</l>
+<l>union1 (RegionDifference, RegionUnion)</l>
+<l>concat_obj (RegionUnion, sub_region, sub_region)</l>
+<c>* gen thresh image</c>
+<l>gen_thresh_image (mean_image, std_image, sub_region, \
+                  dark_thresh_image, light_thresh_image, \
+                  sub_reg_num, thresh_dark, thresh_light, sobel_scale, iFlag)</l>
+<l>return ()</l>
+</body>
+<docu id="load_golden_model">
+<parameters>
+<parameter id="ModelID"/>
+<parameter id="dark_thresh_image"/>
+<parameter id="folder_name"/>
+<parameter id="iFlag"/>
+<parameter id="inspect_region"/>
+<parameter id="light_thresh_image"/>
+<parameter id="match_region"/>
+<parameter id="mean_image"/>
+<parameter id="model_type"/>
+<parameter id="reject_region"/>
+<parameter id="sobel_scale"/>
+<parameter id="std_image"/>
+<parameter id="sub_reg_num"/>
+<parameter id="sub_region"/>
+<parameter id="thresh_dark"/>
+<parameter id="thresh_light"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

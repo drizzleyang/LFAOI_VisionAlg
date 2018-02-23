@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="lines_gauss_iter">
+<interface>
+<io>
+<par name="ImageReduced" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="Lines" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="HighThreshold" base_type="ctrl" dimension="0"/>
+<par name="LineWidth" base_type="ctrl" dimension="0"/>
+<par name="MinSegLength" base_type="ctrl" dimension="0"/>
+<par name="LineType" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>NXLDs:=0</l>
+<l>calculate_lines_gauss_parameters (LineWidth, HighThreshold, Sigma, Low, High)</l>
+<l>lines_gauss (ImageReduced, Lines, Sigma, Low, High, LineType, 'false', 'true', 'false')</l>
+<l>select_contours_xld (Lines, Lines, 'contour_length', MinSegLength, 8000, -0.5, 0.5)</l>
+<c>***********************</c>
+<l>* while (NXLDs == 0 and HighThreshold &gt;= 0.1)</l>
+<l>*     lines_gauss (ImageReduced, Lines, LineWidth / sqrt(3), 0.05, HighThreshold, LineType, 'true', 'true', 'true')</l>
+<l>*     select_contours_xld (Lines, Lines, 'contour_length', MinSegLength, 8000, -0.5, 0.5)</l>
+<l>*     count_obj (Lines, NXLDs)</l>
+<l>*     HighThreshold := 0.5 * HighThreshold</l>
+<l>* endwhile</l>
+<l>return ()</l>
+</body>
+<docu id="lines_gauss_iter">
+<parameters>
+<parameter id="HighThreshold"/>
+<parameter id="ImageReduced"/>
+<parameter id="LineType"/>
+<parameter id="LineWidth"/>
+<parameter id="Lines"/>
+<parameter id="MinSegLength"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

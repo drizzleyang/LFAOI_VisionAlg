@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="match_region_dilation">
+<interface>
+<io>
+<par name="match_region" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="RegionDilation" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="match_dilation_size" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>union1 (match_region, RegionUnion)</l>
+<l>shape_trans (RegionUnion, RegionTrans, 'rectangle1')</l>
+<l>dilation_rectangle1 (RegionTrans, RegionDilation, match_dilation_size, match_dilation_size)</l>
+<l>return ()</l>
+</body>
+<docu id="match_region_dilation">
+<parameters>
+<parameter id="RegionDilation"/>
+<parameter id="match_dilation_size"/>
+<parameter id="match_region"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

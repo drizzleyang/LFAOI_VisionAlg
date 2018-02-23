@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="inspect_chipping_threshold">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="InspectRegion" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="DefectRegion" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="ErosionSize" base_type="ctrl" dimension="0"/>
+<par name="MaxDeviation" base_type="ctrl" dimension="0"/>
+<par name="LightThresh" base_type="ctrl" dimension="0"/>
+<par name="DarkThresh" base_type="ctrl" dimension="0"/>
+<par name="OpeningSize" base_type="ctrl" dimension="0"/>
+<par name="AreaThresh" base_type="ctrl" dimension="0"/>
+<par name="Len1Thresh" base_type="ctrl" dimension="0"/>
+<par name="Len2Thresh" base_type="ctrl" dimension="0"/>
+<par name="SelectOperation" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="ErrMsg" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>ErrMsg := ''</l>
+<l>gen_empty_obj (DefectRegion)</l>
+<c>*get round region</c>
+<l>erosion_rectangle1 (InspectRegion, RegionErosion, ErosionSize, ErosionSize)</l>
+<l>difference (InspectRegion, RegionErosion, RegionDifference)</l>
+<c>*get region meanGray and deviation</c>
+<l>intensity (RegionDifference, Image, Mean, Deviation)</l>
+<l>copy_obj (RegionDifference, Region_, 1, 1)</l>
+<c>*avoid unexpected breakdown </c>
+<c>*find region light dark</c>
+<l>iteration := 0</l>
+<l>while (Deviation &gt; MaxDeviation and iteration &lt;5)</l>
+<l>    reduce_domain (Image, Region_, ImageReduced)</l>
+<l>    LightGrayThresh :=Mean+3*Deviation</l>
+<l>    if (LightGrayThresh &lt; 255)</l>
+<l>        threshold (ImageReduced, RegionLight, LightGrayThresh, 255)</l>
+<l>    else</l>
+<l>        gen_empty_obj (RegionLight)</l>
+<l>    endif</l>
+<l>    DarkGrayThresh := Mean-3*Deviation</l>
+<l>    if (DarkGrayThresh &gt; 0)</l>
+<l>        threshold (ImageReduced, RegionDark, 0, DarkGrayThresh)</l>
+<l>    else</l>
+<l>        gen_empty_obj (RegionDark)</l>
+<l>    endif</l>
+<l>    union2 (RegionDark, RegionLight, RegionUnion)</l>
+<l>    difference (Region_, RegionUnion, Region_)</l>
+<l>    intensity (Region_, Image, Mean, Deviation)</l>
+<l>    iteration := iteration+1</l>
+<l>endwhile</l>
+<l>reduce_domain (Image, RegionDifference, ImageReduced)</l>
+<l>LightGrayThresh :=Mean+LightThresh*Deviation</l>
+<l>if (LightGrayThresh &lt; 255)</l>
+<l>    threshold (ImageReduced, RegionLight, LightGrayThresh, 255)</l>
+<l>else</l>
+<l>    gen_empty_obj (RegionLight)</l>
+<l>endif</l>
+<l>DarkGrayThresh := Mean-DarkThresh*Deviation</l>
+<l>if (DarkGrayThresh &gt; 0)</l>
+<l>    threshold (ImageReduced, RegionDark, 0, DarkGrayThresh)</l>
+<l>else</l>
+<l>    gen_empty_obj (RegionDark)</l>
+<l>endif</l>
+<l>union2 (RegionDark, RegionLight, RegionUnion)</l>
+<l>opening_rectangle1 (RegionUnion, RegionOpening, OpeningSize, OpeningSize)</l>
+<l>connection (RegionOpening, ConnectedRegions)</l>
+<l>select_shape (ConnectedRegions, SelectedRegions, ['area','rect2_len1', 'rect2_len2'], SelectOperation, [AreaThresh, Len1Thresh, Len2Thresh], [9999999, 10000, 10000])</l>
+<l>gen_contour_region_xld (SelectedRegions, Contours, 'border')</l>
+<l>gen_contour_region_xld (InspectRegion, InspectContour, 'border')</l>
+<l>count_obj (Contours, Number)</l>
+<l>DefectIndex := []</l>
+<l>for Index := 1 to Number by 1</l>
+<l>    select_obj (Contours, ObjectSelected, Index)</l>
+<l>    distance_cc_min (ObjectSelected, InspectContour, 'point_to_segment', DistanceMin)</l>
+<l>    if (DistanceMin &lt; 1)</l>
+<l>        DefectIndex := [DefectIndex, Index]</l>
+<l>        concat_obj (DefectRegion, ObjectSelected, DefectRegion)</l>
+<l>    endif</l>
+<l>endfor</l>
+<l>select_obj (SelectedRegions, DefectRegion, DefectIndex)</l>
+<l>count_obj (DefectRegion, Number)</l>
+<l>if (Number)</l>
+<l>    iFlag := -1</l>
+<l>    ErrMsg := 'NG, there are ' + Number + ' defect regions'</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="inspect_chipping_threshold">
+<parameters>
+<parameter id="AreaThresh"/>
+<parameter id="DarkThresh"/>
+<parameter id="DefectRegion"/>
+<parameter id="ErosionSize"/>
+<parameter id="ErrMsg"/>
+<parameter id="Image"/>
+<parameter id="InspectRegion"/>
+<parameter id="Len1Thresh"/>
+<parameter id="Len2Thresh"/>
+<parameter id="LightThresh"/>
+<parameter id="MaxDeviation"/>
+<parameter id="OpeningSize"/>
+<parameter id="SelectOperation"/>
+<parameter id="iFlag"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

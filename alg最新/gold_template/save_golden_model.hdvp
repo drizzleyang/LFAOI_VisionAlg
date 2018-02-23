@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="save_golden_model">
+<interface>
+<io>
+<par name="mean_image" base_type="iconic" dimension="0"/>
+<par name="std_image" base_type="iconic" dimension="0"/>
+<par name="inspect_region" base_type="iconic" dimension="0"/>
+<par name="match_regions" base_type="iconic" dimension="0"/>
+<par name="reject_region" base_type="iconic" dimension="0"/>
+</io>
+<ic>
+<par name="model_out_folder" base_type="ctrl" dimension="0"/>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>try</l>
+<l>    write_image (mean_image, 'ima', 0, model_out_folder+'/mean_image.ima')</l>
+<l>    write_image (std_image, 'ima', 0, model_out_folder+'/std_image.ima')</l>
+<l>    write_region (inspect_region, model_out_folder+'/inspect_region.reg')</l>
+<l>    gen_empty_obj (EmptyObject)</l>
+<l>    write_model (EmptyObject, model_out_folder, model_type, ModelID, [], [], iFlag)</l>
+<l>    write_region (match_regions, model_out_folder+'/match_region.reg')</l>
+<l>    write_region (reject_region, model_out_folder+'/reject_region.reg')</l>
+<l>catch (Exception)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endtry</l>
+<l>file_exists (model_out_folder+'/modelID.dat', FileExists1)</l>
+<l>file_exists (model_out_folder+'/modelType.tup', FileExists2)</l>
+<l>file_exists (model_out_folder+'/mean_image.ima', FileExists3)</l>
+<l>file_exists (model_out_folder+'/std_image.ima', FileExists4)</l>
+<l>file_exists (model_out_folder+'/inspect_region.reg', FileExists5)</l>
+<l>file_exists (model_out_folder+'/match_region.reg', FileExists6)</l>
+<l>file_exists (model_out_folder+'/reject_region.reg', FileExists7)</l>
+<l>if (FileExists1 #1 or FileExists2 #1 or FileExists3 #1 or FileExists4 #1 or FileExists5 #1 or FileExists6 #1 or FileExists7 #1)</l>
+<l>    iFlag := -1</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="save_golden_model">
+<parameters>
+<parameter id="ModelID"/>
+<parameter id="iFlag"/>
+<parameter id="inspect_region"/>
+<parameter id="match_regions"/>
+<parameter id="mean_image"/>
+<parameter id="model_out_folder"/>
+<parameter id="model_type"/>
+<parameter id="reject_region"/>
+<parameter id="std_image"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

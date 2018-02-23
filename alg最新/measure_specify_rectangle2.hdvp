@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="measure_specify_rectangle2">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="InitRectangle" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="Rectangle" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="DistanceThresh" base_type="ctrl" dimension="0"/>
+<par name="MinScore" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>gen_empty_obj (Rectangle)</l>
+<c>******************************************</c>
+<l>get_image_size (Image, Width, Height)</l>
+<l>smallest_rectangle2 (InitRectangle, InitRow, InitColumn, InitPhi, InitLength1, InitLength2)</l>
+<c>**</c>
+<l>dilation_rectangle1 (InitRectangle, InitRectangle, 35, 30)</l>
+<l>reduce_domain (Image, InitRectangle, ImageReduced)</l>
+<l>gauss_filter (ImageReduced, ImageGauss, 11)</l>
+<l>threshold (ImageGauss, Region, 150, 255)</l>
+<l>opening_circle (Region, RegionOpening, 7)</l>
+<l>closing_rectangle1 (RegionOpening, RegionClosing, 81, 81)</l>
+<l>opening_rectangle1 (RegionClosing, RegionOpening1, 6, 6)</l>
+<l>smallest_rectangle2 (RegionClosing, Row2, Column2, Phi1, Length11, Length21)</l>
+<c>***</c>
+<l>create_metrology_model (MetrologyHandle)</l>
+<c></c>
+<l>set_metrology_model_image_size (MetrologyHandle, Width, Height)</l>
+<l>add_metrology_object_rectangle2_measure (MetrologyHandle, Row2, Column2, Phi1, Length11, Length21, \
+                                         8, 5, 1.0, 5, ['measure_select','distance_threshold','min_score','num_instances','measure_distance','measure_transition'], \
+                                         ['first',DistanceThresh,MinScore,2,6,'negative'], MetrologyRectangleIndices)</l>
+<l>apply_metrology_model (Image, MetrologyHandle)</l>
+<l>*  get_metrology_object_measures (Contours1, MetrologyHandle, 'all', 'all', Row1, Column1)</l>
+<l>* gen_cross_contour_xld (Cross, Row1, Column1, 6, 0)</l>
+<l>get_metrology_object_result (MetrologyHandle, MetrologyRectangleIndices, 'all', 'result_type', 'all_param', RectangleParameter)</l>
+<l>clear_metrology_model (MetrologyHandle)    </l>
+<l>if (|RectangleParameter| &gt; 0)</l>
+<l>    Sequence := [0:5:|RectangleParameter| - 1]</l>
+<l>    Row := RectangleParameter[Sequence]</l>
+<l>    Column := RectangleParameter[Sequence+1]</l>
+<l>    Phi := RectangleParameter[Sequence+2]</l>
+<l>    Length1 := RectangleParameter[Sequence+3]</l>
+<l>    Length2 := RectangleParameter[Sequence+4]</l>
+<l>else</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>LengthOffset := abs(Length1-InitLength1)+abs(Length2-InitLength2)</l>
+<l>if (min(LengthOffset) &gt; 8)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>tuple_find (LengthOffset, min(LengthOffset), Indices)</l>
+<l>gen_rectangle2 (Rectangle, Row[Indices], Column[Indices], Phi[Indices], Length1[Indices], Length2[Indices])</l>
+<l>* gen_rectangle2 (Rectangle, Row, Column, Phi, Length1, Length2)</l>
+<l>return ()</l>
+</body>
+<docu id="measure_specify_rectangle2">
+<parameters>
+<parameter id="DistanceThresh"/>
+<parameter id="Image"/>
+<parameter id="InitRectangle"/>
+<parameter id="MinScore"/>
+<parameter id="Rectangle"/>
+<parameter id="iFlag"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

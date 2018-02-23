@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="inspect_threshold">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="Region" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="RegionThresh" base_type="iconic" dimension="0"/>
+<par name="ConnectedRegions" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="LowThr" base_type="ctrl" dimension="0"/>
+<par name="HighThr" base_type="ctrl" dimension="0"/>
+<par name="OpeningSize" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>intensity (Region, Image, Mean, Deviation)</l>
+<l>copy_obj (Region, Region_, 1, 1)</l>
+<l>* min_max_gray (Region, Image, 50, Min, Max, Range)</l>
+<l>iteration := 0</l>
+<l>while (Deviation &gt; 15 and iteration &lt;5)</l>
+<l>    reduce_domain (Image, Region_, ImageReduced)</l>
+<l>    threshold (ImageReduced, RegionLight, min([Mean+3*Deviation, 255]), 255)</l>
+<l>    threshold (ImageReduced, RegionDark, 0, max([Mean-3*Deviation, 5]))</l>
+<l>    union2 (RegionDark, RegionLight, RegionUnion)</l>
+<l>    difference (Region_, RegionUnion, Region_)</l>
+<l>    intensity (Region_, Image, Mean, Deviation)</l>
+<l>    iteration := iteration+1</l>
+<l>endwhile</l>
+<l>reduce_domain (Image, Region, ImageReduced)</l>
+<l>threshold (ImageReduced, RegionLight, min([Mean+3*Deviation, 255]), 255)</l>
+<l>threshold (ImageReduced, RegionDark, 0, max([Mean-3*Deviation, 5]))</l>
+<l>union2 (RegionDark, RegionLight, RegionUnion)</l>
+<l>opening_rectangle1 (RegionUnion, RegionThresh, OpeningSize, OpeningSize)</l>
+<l>connection (RegionThresh, ConnectedRegions)</l>
+<l>return ()</l>
+</body>
+<docu id="inspect_threshold">
+<parameters>
+<parameter id="ConnectedRegions"/>
+<parameter id="HighThr"/>
+<parameter id="Image"/>
+<parameter id="LowThr"/>
+<parameter id="OpeningSize"/>
+<parameter id="Region"/>
+<parameter id="RegionThresh"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

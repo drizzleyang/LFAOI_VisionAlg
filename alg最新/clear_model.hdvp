@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="clear_model">
+<interface>
+<ic>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+<par name="model_id" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag:=0</l>
+<l>if(|model_type|#|model_id|)</l>
+<l>    iFlag:=-1</l>
+<l>    return()</l>
+<l>endif</l>
+<l>for i:=0 to |model_id|-1 by 1</l>
+<l>    switch(model_type[i])</l>
+<l>    case 0:</l>
+<l>        clear_ncc_model(model_id[i])</l>
+<l>        break</l>
+<l>    case 1:</l>
+<l>        clear_shape_model(model_id[i])</l>
+<l>        break</l>
+<l>    endswitch</l>
+<l>endfor</l>
+<l>return ()</l>
+</body>
+<docu id="clear_model">
+<parameters>
+<parameter id="iFlag"/>
+<parameter id="model_id"/>
+<parameter id="model_type"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

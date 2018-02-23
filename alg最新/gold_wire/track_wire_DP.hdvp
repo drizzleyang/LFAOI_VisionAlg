@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="track_wire_DP">
+<interface>
+<io>
+<par name="ImageR" base_type="iconic" dimension="0"/>
+<par name="ic_ball" base_type="iconic" dimension="0"/>
+<par name="pcb_ball" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="Wire" base_type="iconic" dimension="0"/>
+<par name="defect_region" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="SearchWidth" base_type="ctrl" dimension="0"/>
+<par name="LineThr" base_type="ctrl" dimension="0"/>
+<par name="LineWidth" base_type="ctrl" dimension="0"/>
+<par name="MinSegLength" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>* line_length := 6</l>
+<l>gen_empty_obj (defect_region)</l>
+<l>gen_empty_obj (Wire)</l>
+<l>area_center (pcb_ball, area_pcb, RowStart, ColStart)</l>
+<l>area_center (ic_ball, area_ic, RowEnd, ColEnd)</l>
+<l>if (area_ic &lt;1 or area_pcb &lt;1)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>distance_pp (RowStart, ColStart, RowEnd, ColEnd, Length)</l>
+<l>tuple_atan2 (-(RowStart - RowEnd)*1.0, (ColStart - ColEnd)*1.0, angle)</l>
+<l>if(angle&lt;0)</l>
+<l>    angle:=rad(180)+angle</l>
+<l>endif</l>
+<c>* detect lines in the SecondPadRegion of ImageS</c>
+<l>gen_rectangle2 (Rectangle, (RowStart+RowEnd)/2.0, (ColStart+ColEnd)/2.0, angle, Length/2.0, SearchWidth)</l>
+<l>difference (Rectangle, pcb_ball, RegionDifference_)</l>
+<l> difference (RegionDifference_, ic_ball, RegionDifference)</l>
+<l>gen_rectangle2 (Rectangle1, RowStart, ColStart, angle, 4, SearchWidth-2)</l>
+<l>opening (RegionDifference, Rectangle1, RegionOpening)</l>
+<l>reduce_domain (ImageR, RegionOpening, ImageReduced)</l>
+<l>lines_gauss_iter (ImageReduced, Line, LineThr, LineWidth, MinSegLength, 'light')</l>
+<l>segment_contours_xld (Line, LineSplit, 'lines', 3, 1, 1)</l>
+<l>select_contours_xld (LineSplit, SelectedXLD, ['contour_length'], [MinSegLength], [8000], [-0.5], [0.5])</l>
+<l>select_contours_xld (SelectedXLD, SelectedXLD, ['open'], [1], [10000], [0], [0])</l>
+<l>count_obj (SelectedXLD, Number)</l>
+<l>gen_empty_obj (Seg_bin)</l>
+<l>for Index := 1 to Number by 1</l>
+<l>    select_obj (SelectedXLD, ObjectSelected, Index)</l>
+<l>    fit_line_contour_xld (ObjectSelected, 'tukey', -1, 0, 5, 2, RowBegin1, ColBegin1, RowEnd1, ColEnd1, Nr, Nc, Dist)</l>
+<l>    if (|RowBegin1| # 1)</l>
+<l>        continue</l>
+<l>    endif</l>
+<l>    angle_ll (RowBegin1, ColBegin1, RowEnd1, ColEnd1, RowStart, ColStart, RowEnd, ColEnd, Angle)</l>
+<l>*     tuple_deg (Angle, Deg)</l>
+<l>    if (Angle &gt;rad(90))</l>
+<l>        Angle := Angle-rad(180)</l>
+<l>    endif</l>
+<l>    if (Angle &lt;rad(-90))</l>
+<l>        Angle := Angle+rad(180)</l>
+<l>    endif</l>
+<l>    if (abs(Angle) &gt; rad(30))</l>
+<l>        continue</l>
+<l>    endif</l>
+<l>    concat_obj (Seg_bin, ObjectSelected, Seg_bin)</l>
+<l>endfor</l>
+<l>line_length := 0</l>
+<l>row_1 :=RowStart-line_length/Length*(RowStart-RowEnd)</l>
+<l>col_1 :=ColStart-line_length/Length*(ColStart-ColEnd)</l>
+<l>row_0 :=RowEnd+line_length/Length*(RowStart-RowEnd)</l>
+<l>col_0 :=ColEnd+line_length/Length*(ColStart-ColEnd)</l>
+<l>gen_contour_polygon_xld (Point_start, [RowStart, row_1], [ColStart,col_1])</l>
+<l>gen_contour_polygon_xld (Point_end, [RowEnd, row_0], [ColEnd, col_0])</l>
+<l>concat_obj (Point_start, Seg_bin, Segments)</l>
+<l>concat_obj (Segments, Point_end, Segments)</l>
+<c></c>
+<l>max_dist := 20</l>
+<l>segments_concat_DP (Segments, Wire, angle, max_dist)</l>
+<l>* dev_clear_window ()</l>
+<l>* dev_display (ImageR)</l>
+<l>* dev_display (Wire)</l>
+<l>count_obj (Wire, Number)</l>
+<l>if (Number # 1)</l>
+<l>    gen_empty_obj (Wire)</l>
+<l>    copy_obj (Rectangle, defect_region, 1, 1)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>smooth_contours_xld (Wire, Wire, 11)</l>
+<l>length_xld (Wire, WireLength)</l>
+<l>if (WireLength &gt; Length*1.2 or WireLength &lt; Length*0.8)</l>
+<l>    gen_empty_obj (Wire)</l>
+<l>    copy_obj (Rectangle, defect_region, 1, 1)</l>
+<l>    iFlag := -1</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="track_wire_DP">
+<parameters>
+<parameter id="ImageR"/>
+<parameter id="LineThr"/>
+<parameter id="LineWidth"/>
+<parameter id="MinSegLength"/>
+<parameter id="SearchWidth"/>
+<parameter id="Wire"/>
+<parameter id="defect_region"/>
+<parameter id="iFlag"/>
+<parameter id="ic_ball"/>
+<parameter id="pcb_ball"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

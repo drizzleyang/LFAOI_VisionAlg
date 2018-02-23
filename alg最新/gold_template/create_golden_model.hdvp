@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="create_golden_model">
+<interface>
+<io>
+<par name="match_region" base_type="iconic" dimension="0"/>
+<par name="golden_region" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="mean_image" base_type="iconic" dimension="0"/>
+<par name="std_image" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="ImageFiles" base_type="ctrl" dimension="0"/>
+<par name="init_index" base_type="ctrl" dimension="0"/>
+<par name="num_level" base_type="ctrl" dimension="0"/>
+<par name="angle_start" base_type="ctrl" dimension="0"/>
+<par name="angle_extent" base_type="ctrl" dimension="0"/>
+<par name="score_thresh" base_type="ctrl" dimension="0"/>
+<par name="model_type" base_type="ctrl" dimension="0"/>
+<par name="match_dilation_size" base_type="ctrl" dimension="0"/>
+<par name="is_refinement" base_type="ctrl" dimension="0"/>
+<par name="refine_thresh" base_type="ctrl" dimension="0"/>
+<par name="min_training_set" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="aligned_number" base_type="ctrl" dimension="0"/>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>ErrMsg := ''</l>
+<l>try</l>
+<c>    * create init model</c>
+<l>    read_image (Image, ImageFiles[init_index])</l>
+<l>    create_match_model (Image, match_region, model_type, num_level, angle_start, angle_extent, ModelID_)</l>
+<l>    get_image_size (Image, Width, Height)</l>
+<l>    gen_image_const (mean_image, 'real', Width, Height)</l>
+<l>    gen_image_const (std_image, 'real', Width, Height)</l>
+<l>    gen_empty_obj (image_array)</l>
+<l>    match_region_dilation (match_region, MatchRegionDilation, match_dilation_size)</l>
+<l>    aligned_number := 0</l>
+<l>    for Index := 0 to |ImageFiles| - 1 by 1</l>
+<l>        if (aligned_number &gt; 160)</l>
+<l>            break</l>
+<l>        endif</l>
+<l>        read_image (Image, ImageFiles[Index])</l>
+<l>        align_image (Image, MatchRegionDilation, ImageAffinTrans, model_type, ModelID_, angle_start, angle_extent, score_thresh, iFlag0, hom_temp2image, row, col, angle)</l>
+<l>        if (iFlag0=0)</l>
+<l>            reduce_domain (ImageAffinTrans, golden_region, ImageAffinTrans)</l>
+<l>            convert_image_type (ImageAffinTrans, ImageConverted, 'real')</l>
+<l>            add_image (ImageConverted, mean_image, mean_image, 1.0, 0)</l>
+<l>            mult_image (ImageConverted, ImageConverted, ImageSquare, 1.0, 0)</l>
+<l>            add_image (ImageSquare, std_image, std_image, 1.0, 0)</l>
+<l>            aligned_number := aligned_number+1</l>
+<l>            concat_obj (image_array, ImageAffinTrans, image_array)</l>
+<l>        endif</l>
+<l>    endfor</l>
+<l>    if (aligned_number&gt;min_training_set)</l>
+<l>        scale_image (mean_image, mean_image, 1.0/aligned_number, 0)</l>
+<l>        scale_image (std_image, std_image, 1.0/aligned_number, 0)</l>
+<l>        mult_image (mean_image, mean_image, mean_image2, 1.0, 0)</l>
+<l>        sub_image (std_image, mean_image2, std_image, 1.0, 1.0)</l>
+<l>        sqrt_image (std_image, std_image)</l>
+<l>    else</l>
+<l>        iFlag := -1</l>
+<l>        return ()</l>
+<l>    endif</l>
+<c>    * mean std image refinement</c>
+<l>    if (is_refinement)</l>
+<l>        scale_image (std_image, ImageScaled, refine_thresh, 0)</l>
+<l>        add_image (mean_image, ImageScaled, ImageAdd, 1, 0)</l>
+<l>        convert_image_type (ImageAdd, light_thresh_image, 'byte')</l>
+<l>        sub_image (mean_image, ImageScaled, ImageSub, 1, 0)</l>
+<l>        convert_image_type (ImageSub, dark_thresh_image, 'byte')</l>
+<l>        gen_image_proto (mean_image, count_image, 0)</l>
+<l>        gen_image_proto (mean_image, mean_image, 0)</l>
+<l>        gen_image_proto (std_image, std_image, 0)</l>
+<l>        for index := 1 to aligned_number by 1</l>
+<l>            select_obj (image_array, ObjectSelected, index)</l>
+<l>            reduce_domain (ObjectSelected, golden_region, ImageReduced)</l>
+<l>            dyn_threshold (ImageReduced, dark_thresh_image, dark_region, 1, 'dark')</l>
+<l>            dyn_threshold (ImageReduced, light_thresh_image, ligth_region, 1, 'light')</l>
+<l>            union2 (ligth_region, dark_region, RegionUnion)</l>
+<l>            dilation_circle (RegionUnion, RegionDilation, 3.5)</l>
+<l>            region_to_bin (RegionDilation, BinImage, 0, 1, Width, Height)</l>
+<l>            convert_image_type (BinImage, BinImage, 'real')</l>
+<l>            convert_image_type (ImageReduced, ImageConverted, 'real')</l>
+<l>            mult_image (ImageConverted, BinImage, ImageResult, 1.0, 0)</l>
+<l>            add_image (mean_image, ImageResult, mean_image, 1.0, 0)</l>
+<l>            mult_image (ImageResult, ImageResult, ImageSquare, 1.0, 0)</l>
+<l>            add_image (std_image, ImageSquare, std_image, 1.0, 0)</l>
+<l>            add_image (count_image, BinImage, count_image, 1.0, 0)</l>
+<l>        endfor</l>
+<l>        min_max_gray (golden_region, count_image, 0, Min, Max, Range)</l>
+<l>        if (Min &gt; min_training_set*1.0)</l>
+<l>            div_image (mean_image, count_image, mean_image, 1.0, 0)</l>
+<l>            div_image (std_image, count_image, std_image, 1.0, 0)</l>
+<l>            mult_image (mean_image, mean_image, mean_image2, 1.0, 0)</l>
+<l>            sub_image (std_image, mean_image2, std_image, 1.0, 1.0)</l>
+<l>            sqrt_image (std_image, std_image)</l>
+<l>        else</l>
+<l>            iFlag := -1</l>
+<l>            return ()</l>
+<l>        endif</l>
+<l>    endif</l>
+<c>    * create golden model </c>
+<l>    convert_image_type (mean_image, ImageMean, 'byte')</l>
+<l>    iFlag1 := 0</l>
+<l>    try</l>
+<l>        if (model_type = 0)</l>
+<l>            clear_ncc_model (ModelID_)</l>
+<l>        elseif (model_type =1)</l>
+<l>            clear_shape_model (ModelID_)</l>
+<l>        endif</l>
+<l>    catch (ex)</l>
+<l>        iFlag1 := -1</l>
+<l>    endtry</l>
+<l>    create_match_model (ImageMean, match_region, model_type, num_level, angle_start, angle_extent, ModelID)</l>
+<l>    if (iFlag1#0 or iFlag0#0)</l>
+<l>        iFlag:=-1</l>
+<l>    endif</l>
+<l>catch (Exception)</l>
+<l>    iFlag := -1</l>
+<l>endtry</l>
+<l>return ()</l>
+</body>
+<docu id="create_golden_model">
+<parameters>
+<parameter id="ImageFiles"/>
+<parameter id="ModelID"/>
+<parameter id="aligned_number"/>
+<parameter id="angle_extent"/>
+<parameter id="angle_start"/>
+<parameter id="golden_region"/>
+<parameter id="iFlag"/>
+<parameter id="init_index"/>
+<parameter id="is_refinement"/>
+<parameter id="match_dilation_size"/>
+<parameter id="match_region"/>
+<parameter id="mean_image"/>
+<parameter id="min_training_set"/>
+<parameter id="model_type"/>
+<parameter id="num_level"/>
+<parameter id="refine_thresh"/>
+<parameter id="score_thresh"/>
+<parameter id="std_image"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

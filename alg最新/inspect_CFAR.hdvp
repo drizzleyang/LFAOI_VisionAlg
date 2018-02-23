@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="inspect_CFAR">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="InspectRegion" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="DefectRegion" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="ClutterSize" base_type="ctrl" dimension="0"/>
+<par name="ProtectSize" base_type="ctrl" dimension="0"/>
+<par name="TargetSize" base_type="ctrl" dimension="0"/>
+<par name="DevScale" base_type="ctrl" dimension="0"/>
+<par name="DarkLight" base_type="ctrl" dimension="0"/>
+<par name="UseReduce" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>ErrMsg := ''</l>
+<l>gen_empty_region (DefectRegion)</l>
+<l>reduce_domain (Image, InspectRegion, ImageByte)</l>
+<c>******************</c>
+<l>crop_domain (ImageByte, ImagePart)</l>
+<l>shape_trans (InspectRegion, RegionTrans, 'rectangle1')</l>
+<l>area_center (RegionTrans, Area, Row, Column)</l>
+<l>get_domain (ImagePart, Domain)</l>
+<l>shape_trans (Domain, RegionTrans1, 'rectangle1')</l>
+<l>area_center (RegionTrans1, Area1, Row1, Column1)</l>
+<l>vector_angle_to_rigid (Row1, Column1, 0, Row, Column, 0, HomMat2D)</l>
+<c>******************</c>
+<l>convert_image_type (ImagePart, ImageReal, 'real')</l>
+<l>mean_image_clutter (ImageReal, Domain, ImageMeanClutter, ClutterSize, ProtectSize, UseReduce)</l>
+<l>mult_image (ImageMeanClutter, ImageMeanClutter, ImageMeanClutterSquare, 1, 0)</l>
+<l>mult_image (ImageReal, ImageReal, ImageSquareReal, 1, 0)</l>
+<l>mean_image_clutter (ImageSquareReal, Domain, ImageSquareMeanClutter, ClutterSize, ProtectSize, UseReduce)</l>
+<l>sub_image (ImageSquareMeanClutter, ImageMeanClutterSquare, ImageVarClutterSquare, 1, 0.0000001)</l>
+<l>sqrt_image (ImageVarClutterSquare, ImageVarClutter)</l>
+<l>if(UseReduce == 0)</l>
+<l>    mean_image (ImageReal, ImageMeanTarget, TargetSize, TargetSize)</l>
+<l>else</l>
+<l>    mean_image_reduce (ImageReal, Domain, ImageMeanTarget, TargetSize)</l>
+<l>endif</l>
+<l>sub_image (ImageMeanTarget, ImageMeanClutter, ImageSub, 1, 0)</l>
+<l>div_image (ImageSub, ImageVarClutter, ImageSufficient, 1, 0)</l>
+<l>if (DarkLight == 'not_equal')</l>
+<l>    if (|DevScale| #2)</l>
+<l>        iFlag := -1</l>
+<l>        ErrMsg := 'wrong number of DevScale for not_equal'</l>
+<l>        return ()</l>
+<l>    endif</l>
+<l>    threshold (ImageSufficient, RegionLight, DevScale[0], 999)</l>
+<l>    threshold (ImageSufficient, RegionDark, -999, -DevScale[1])</l>
+<l>    union2 (RegionLight, RegionDark, DefectRegion_)</l>
+<l>elseif (DarkLight == 'dark')</l>
+<l>    threshold (ImageSufficient, DefectRegion_, -999, -DevScale[0])</l>
+<l>elseif (DarkLight == 'light')</l>
+<l>    threshold (ImageSufficient, DefectRegion_, DevScale[0], 999)</l>
+<l>else</l>
+<l>    iFlag := -1</l>
+<l>    ErrMsg := 'wrong DarkLight value'</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>count_obj (DefectRegion, Number)</l>
+<l>if (Number)</l>
+<l>    affine_trans_region (DefectRegion_, DefectRegion, HomMat2D, 'nearest_neighbor')</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="inspect_CFAR">
+<parameters>
+<parameter id="ClutterSize"/>
+<parameter id="DarkLight"/>
+<parameter id="DefectRegion"/>
+<parameter id="DevScale"/>
+<parameter id="Image"/>
+<parameter id="InspectRegion"/>
+<parameter id="ProtectSize"/>
+<parameter id="TargetSize"/>
+<parameter id="UseReduce"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

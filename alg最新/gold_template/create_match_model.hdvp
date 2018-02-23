@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="create_match_model">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="ModelRegions" base_type="iconic" dimension="0"/>
+</io>
+<ic>
+<par name="ModelType" base_type="ctrl" dimension="0"/>
+<par name="NumLevel" base_type="ctrl" dimension="0"/>
+<par name="AngleStart" base_type="ctrl" dimension="0"/>
+<par name="AngleExtent" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>* create match model_ID (patterns)</c>
+<c>* in: Image match_regions, angle_start, angle_extent, num_level</c>
+<c>* out: ModelID, iFlag</c>
+<c>* last modification: yilun chen 05/05/16</c>
+<c></c>
+<l>union1 (ModelRegions, UnionRegion)</l>
+<l>reduce_domain (Image, UnionRegion, ImageReduced)</l>
+<l>if (ModelType == 0)</l>
+<l>    create_ncc_model (ImageReduced, NumLevel, AngleStart, AngleExtent, 'auto', 'use_polarity', ModelID)</l>
+<l>elseif (ModelType == 1)</l>
+<l>    create_shape_model (ImageReduced, NumLevel, AngleStart, AngleExtent, 'auto', 'auto', 'use_polarity', 'auto', 'auto', ModelID)</l>
+<l>endif</l>
+<l>set_model_origin (UnionRegion, ModelType, ModelID)</l>
+<l>return ()</l>
+</body>
+<docu id="create_match_model">
+<parameters>
+<parameter id="AngleExtent"/>
+<parameter id="AngleStart"/>
+<parameter id="Image"/>
+<parameter id="ModelID"/>
+<parameter id="ModelRegions"/>
+<parameter id="ModelType"/>
+<parameter id="NumLevel"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

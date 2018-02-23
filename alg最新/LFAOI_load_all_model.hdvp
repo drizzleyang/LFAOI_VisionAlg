@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="LFAOI_load_all_model">
+<interface>
+<oo>
+<par name="vec_model_object" base_type="iconic" dimension="1"/>
+</oo>
+<ic>
+<par name="vec_model_param" base_type="ctrl" dimension="1"/>
+</ic>
+<oc>
+<par name="vec_model_tuple" base_type="ctrl" dimension="1"/>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+<par name="err_msg" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<c>********************************************************************************</c>
+<c>*0:pcb golden model, 1:ic golden model, 2:pcb pad, 3:ic pad, 4:chipping, 5: scratch, 6: match</c>
+<c>*golden model [dark, light, match, inspect, reject, sub]</c>
+<c>********************************************************************************</c>
+<l>iFlag := 0</l>
+<l>err_msg := ''</l>
+<l>model_path := vec_model_param.at(0)</l>
+<l>pcb_sub_reg_num :=vec_model_param.at(1)[0]</l>
+<l>pcb_sobel_scale := vec_model_param.at(1)[1]</l>
+<l>pcb_dark_thresh := vec_model_param.at(1)[2]</l>
+<l>pcb_light_thresh := vec_model_param.at(1)[3]</l>
+<l>ic_sub_reg_num :=vec_model_param.at(2)[0]</l>
+<l>ic_sobel_scale := vec_model_param.at(2)[1]</l>
+<l>ic_dark_thresh := vec_model_param.at(2)[2]</l>
+<l>ic_light_thresh := vec_model_param.at(2)[3]</l>
+<l>gen_empty_obj (EmptyObject)</l>
+<l>vec_model_object := {EmptyObject}</l>
+<l>vec_model_object.clear()</l>
+<l>vec_model_tuple := {[]}</l>
+<l>vec_model_tuple.clear()</l>
+<c>* pcb golden model</c>
+<l>pcb_model_path := model_path+'/golden_pcb'</l>
+<l>load_golden_model (pcb_mean_image, pcb_std_image, pcb_match_region, pcb_inspect_region, pcb_reject_region, pcb_sub_region, pcb_dark_thresh_image, pcb_light_thresh_image, pcb_model_path, pcb_sub_reg_num, pcb_sobel_scale, pcb_dark_thresh, pcb_light_thresh, pcb_ModelID, pcb_model_type, pcb_iFlag1)</l>
+<l>if (pcb_iFlag1 # 0)</l>
+<l>    iFlag := -1</l>
+<l>    err_msg := 'load pcb golden model failed'</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>gen_empty_obj (EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_mean_image, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_std_image, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_match_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_inspect_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_reject_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_sub_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_dark_thresh_image, EmptyObject)</l>
+<l>concat_obj (EmptyObject, pcb_light_thresh_image, EmptyObject)</l>
+<l>vec_model_object.at(0) := EmptyObject</l>
+<l>vec_model_tuple.at(0) := [pcb_ModelID, pcb_model_type]</l>
+<c>* ic golden model</c>
+<l>ic_model_path := model_path+'/golden_ic'</l>
+<l>load_golden_model (ic_mean_image, ic_std_image, ic_match_region, ic_inspect_region, ic_reject_region, ic_sub_region, ic_dark_thresh_image, ic_light_thresh_image, ic_model_path, ic_sub_reg_num, ic_sobel_scale, ic_dark_thresh, ic_light_thresh, ic_ModelID, ic_model_type, ic_iFlag1)</l>
+<l>if (ic_iFlag1 # 0)</l>
+<l>    iFlag := -1</l>
+<l>    err_msg := 'load ic golden model failed'</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>gen_empty_obj (EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_mean_image, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_std_image, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_match_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_inspect_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_reject_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_sub_region, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_dark_thresh_image, EmptyObject)</l>
+<l>concat_obj (EmptyObject, ic_light_thresh_image, EmptyObject)</l>
+<l>vec_model_object.at(1) := EmptyObject</l>
+<l>vec_model_tuple.at(1) := [ic_ModelID, ic_model_type]</l>
+<c>* pad and wire line</c>
+<l>wire_model_path := model_path+ '/gold_line'</l>
+<l>read_region (pcb_pad, wire_model_path+'/pcb_pad_region.reg')</l>
+<l>read_region (ic_pad, wire_model_path+'/ic_pad_region.reg')</l>
+<l>read_tuple (wire_model_path+'/ball_num_list.tup', ball_num_tup)</l>
+<l>count_obj (pcb_pad, pcb_Number)</l>
+<l>count_obj (ic_pad, ic_Number)</l>
+<l>if (pcb_Number == 0 or ic_Number == 0)</l>
+<l>    iFlag := -1</l>
+<l>    err_msg := 'load pad region failed'</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>vec_model_object.at(2) := pcb_pad</l>
+<l>vec_model_object.at(3) := ic_pad</l>
+<c>* ball_num_tup ?</c>
+<l>vec_model_tuple.at(2) := [ball_num_tup]</l>
+<c>* chipping model</c>
+<l>chipping_model_path := model_path + '/chipping'</l>
+<l>list_files (chipping_model_path, 'directories', Dres)</l>
+<l>gen_empty_obj (chipping_region)</l>
+<l>for Index := 0 to |Dres|-1 by 1</l>
+<l>    read_shape_model (Dres[Index]+'/corase_match_model.dat', ModelID_CoraseMatch)</l>
+<l>    read_shape_model (Dres[Index]+'/XLD_shape_model.dat', ModelID_XLD)</l>
+<l>    read_region (region, Dres[Index]+'/inspectRegion.reg')</l>
+<l>    concat_obj (chipping_region, region, chipping_region)</l>
+<l>    read_contour_xld_dxf (XLDContours, Dres[Index]+'/XLD.dxf', [], [], DxfStatus)</l>
+<l>    concat_obj (chipping_region, XLDContours, chipping_region)</l>
+<l>endfor</l>
+<l>vec_model_object.at(4) := chipping_region</l>
+<l>vec_model_tuple.at(4):=[ModelID_CoraseMatch,ModelID_XLD]</l>
+<c>* scratch model</c>
+<l>scratch_model_path := model_path + '/scratch'</l>
+<l>list_files (scratch_model_path, 'directories', Dres)</l>
+<l>gen_empty_obj (scratch_region)</l>
+<l>for Index := 0 to |Dres|-1 by 1</l>
+<l>    read_region (region, Dres[Index]+'/inspect_region.reg')</l>
+<c></c>
+<l>    concat_obj (scratch_region, region, scratch_region)</l>
+<l>endfor</l>
+<l>vec_model_object.at(5) := scratch_region</l>
+<c>* match model</c>
+<l>match_model_path := model_path + '/match'</l>
+<l>list_files (match_model_path, 'directories', Dres)</l>
+<l>gen_empty_obj (match_inspect_region)</l>
+<l>match_modelID := []</l>
+<l>match_model_type := []</l>
+<l>for Index := 0 to |Dres|-1 by 1</l>
+<c>    </c>
+<l>    read_region (region, Dres[Index]+'/inspect_region.reg')</l>
+<l>    union1 (region, RegionUnion)</l>
+<l>    concat_obj (match_inspect_region, RegionUnion, match_inspect_region)    </l>
+<l>    read_model (show_contour, Dres[Index]+'1', model_type0, model_id0, def_row, def_col, iFlag2)</l>
+<l>    read_model (show_contour, Dres[Index]+'2', model_type1, model_id1, def_row, def_col, iFlag2)</l>
+<l>    if (iFlag2 # 0)</l>
+<l>        iFlag := -1</l>
+<l>        err_msg := 'load match model failed'</l>
+<l>        return ()</l>
+<l>    endif</l>
+<l>    match_modelID := [match_modelID, [model_id0,model_id1]]</l>
+<l>    match_model_type := [match_model_type, [model_type0,model_type0]]</l>
+<l>endfor</l>
+<l>vec_model_object.at(6) := match_inspect_region</l>
+<l>vec_model_tuple.at(6) := [match_modelID, match_model_type]</l>
+<l>err_msg := 'load model completed'</l>
+<l>return ()</l>
+</body>
+<docu id="LFAOI_load_all_model">
+<parameters>
+<parameter id="err_msg"/>
+<parameter id="iFlag"/>
+<parameter id="vec_model_object"/>
+<parameter id="vec_model_param"/>
+<parameter id="vec_model_tuple"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

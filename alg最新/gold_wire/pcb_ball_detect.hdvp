@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="pcb_ball_detect">
+<interface>
+<io>
+<par name="ImageLine" base_type="iconic" dimension="0"/>
+<par name="ImageIC" base_type="iconic" dimension="0"/>
+<par name="pcb_pad_affine" base_type="iconic" dimension="0"/>
+<par name="ic_pad_affine" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="defect_pcb_pad" base_type="iconic" dimension="0"/>
+<par name="pcb_ball" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="pcb_ball_num" base_type="ctrl" dimension="0"/>
+<par name="line_num" base_type="ctrl" dimension="0"/>
+<par name="pcb_radius_low" base_type="ctrl" dimension="0"/>
+<par name="pcb_radius_high" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>gen_empty_obj (defect_pcb_pad)</l>
+<l>gen_empty_obj (pcb_ball)</l>
+<l>get_image_size (ImageLine, Width, Height)</l>
+<l>dilation_circle (pcb_pad_affine, pcb_pad_dilation, 3.5)</l>
+<l>get_image_size (ImageLine, Width, Height)</l>
+<l>pad_num := |pcb_ball_num|</l>
+<l>ball_index := 0</l>
+<l>union1 (pcb_pad_affine, RegionUnion1)</l>
+<l>reduce_domain (ImageLine, RegionUnion1, ImageReduced1)</l>
+<l>min_max_gray (RegionUnion1, ImageLine, 10, Min, Max, Range)</l>
+<l>threshold (ImageReduced1, Region1, Max, 255)</l>
+<l>paint_region (Region1, ImageLine, ImageResult, Max, 'fill')</l>
+<l>min_max_gray (RegionUnion1, ImageResult, 25, Min, Max, Range)</l>
+<l>min_max_gray (RegionUnion1, ImageIC, 10, Min1, Max1, Range1)</l>
+<l>sub_image (ImageResult, ImageIC, ImageSub, 1, min([Max1-Max, 40]))</l>
+<c>**********2/8 by yongbang Zhou</c>
+<l>reduce_domain (ImageLine, RegionUnion1, ImageReduced2)</l>
+<l>edges_sub_pix (ImageReduced2, Edges, 'canny', 1, 30, 50)</l>
+<l>reduce_domain (ImageIC, RegionUnion1, ImageReduced2)</l>
+<l>* edges_sub_pix (ImageReduced2, Edges1, 'canny', 1, 30, 50)</l>
+<l>* concat_obj (Edges, Edges1, Edges)</l>
+<l>contours_neighborhood_regions (Edges, NeighborRegions, 0.5)</l>
+<l>region_to_bin (NeighborRegions, BinImage, 255, 0, Width, Height)</l>
+<l>gauss_image (BinImage, ImageGauss, 7)</l>
+<c>************</c>
+<l>for Index := 1 to pad_num by 1</l>
+<l>    select_obj (pcb_pad_dilation, ObjectSelected, Index)</l>
+<l>    select_obj (pcb_pad_affine, ObjectSelected1, Index)    </l>
+<c>    ***************</c>
+<l>    ball_num := pcb_ball_num[Index-1]</l>
+<l>    ball_index := sum(pcb_ball_num[0:Index-1])</l>
+<l>    select_obj (ic_pad_affine, ic_pad, [ball_index-ball_num+1:ball_index])</l>
+<c>    *******test*******</c>
+<l>    if (0)</l>
+<c>        *none</c>
+<l>    else</l>
+<l>        area_center (ObjectSelected1, Area3, Row2, Column2)</l>
+<l>        radius_mean := (pcb_radius_low+pcb_radius_high)/2.0</l>
+<l>        area_mean := radius_mean*radius_mean*3.14159*ball_num</l>
+<l>        area_mean_ := pcb_radius_high*pcb_radius_high*3.14159*ball_num</l>
+<l>        area_center (ObjectSelected1, Area4, Row4, Column4)</l>
+<l>        area_ratio := area_mean_*1.5/Area4        </l>
+<l>        reduce_domain (ImageGauss, ObjectSelected1, ImageReduced)</l>
+<l>        min_max_gray (ObjectSelected1, ImageReduced, 10, Min, Max, Range)</l>
+<l>*         threshold (ImageReduced, Region1, Max, 255)</l>
+<l>*         paint_region (Region1, ImageReduced, ImageResult, Max, 'fill')</l>
+<l>        intensity (ObjectSelected1, ImageReduced, Mean, Deviation)</l>
+<l>        gray_histo (ObjectSelected1, ImageReduced, AbsoluteHisto, RelativeHisto)</l>
+<l>        ratio_ := 0</l>
+<l>        gray_threshold := Mean/2</l>
+<l>*         for tup_ind := |RelativeHisto|-1 to 0 by -1</l>
+<l>*             ratio_ := ratio_+RelativeHisto[tup_ind]</l>
+<l>*             if (ratio_ &gt; area_ratio or tup_ind &lt; 30)</l>
+<l>*                 gray_threshold := tup_ind</l>
+<l>*                 break</l>
+<l>*             endif</l>
+<l>*         endfor</l>
+<l>        gray_threshold_max := max([(Mean+Max)/2,gray_threshold+20])</l>
+<l>*         gray_threshold := (Mean+Min)/2</l>
+<l>        while (gray_threshold&lt; gray_threshold_max)</l>
+<l>            threshold (ImageReduced, Region, gray_threshold, 255)</l>
+<l>            gray_threshold := gray_threshold+5</l>
+<l>            fill_up_shape (Region, RegionFillUp, 'area', 1, 10)        </l>
+<l>            for Index2 := 0 to 6 by 1</l>
+<l>                opening_circle (RegionFillUp, RegionOpening, pcb_radius_low-Index2*0.5)</l>
+<l>                connection (RegionOpening, ConnectedRegions3)</l>
+<l>                area_center (ConnectedRegions3, Area1, Row, Column)</l>
+<l>                if (|Area1| &lt; ball_num and ball_num &gt;=2)</l>
+<l>                    union1 (ConnectedRegions3, RegionUnion)</l>
+<l>                    orientation_region (RegionUnion, Phi2)</l>
+<l>                    gen_rectangle2 (Rectangle, Row[0], Column[0], Phi2, 2, pcb_radius_low)</l>
+<l>                    opening (ConnectedRegions3, Rectangle, ConnectedRegions3)</l>
+<l>                    connection (ConnectedRegions3, ConnectedRegions3)</l>
+<l>                    area_center (ConnectedRegions3, Area1, Row, Column)</l>
+<l>                endif</l>
+<l>                if ((|Area1| &gt;= ball_num and Area1 &gt;0 )or sum(Area1) &gt; area_mean*0.9)</l>
+<l>                    break</l>
+<l>                endif                </l>
+<l>            endfor</l>
+<l>            count_obj (ConnectedRegions3, Number1)</l>
+<l>            if (|Area1| &lt; ball_num)</l>
+<l>                orientation_region (RegionOpening, Phi2)</l>
+<l>                for ind := 0 to 8 by 1</l>
+<l>                    gen_rectangle2 (Rectangle, Row[0], Column[0], Phi2, 1, pcb_radius_low+ind*0.5)</l>
+<l>                    opening (RegionOpening, Rectangle, RegionIntersection)</l>
+<l>                    connection (RegionIntersection, ConnectedRegions3)</l>
+<l>                    count_obj (ConnectedRegions3, Number1)</l>
+<l>                    if (Number1 == ball_num)</l>
+<l>                        break</l>
+<l>                    endif</l>
+<l>                endfor</l>
+<l>            endif</l>
+<l>            if (Number1 &gt;= ball_num)</l>
+<l>                break</l>
+<l>            endif</l>
+<l>        endwhile</l>
+<l>        area_center (ConnectedRegions3, Area1, Row, Column)</l>
+<l>        if (|Area1| &lt; ball_num)</l>
+<l>            area_center (ConnectedRegions3, Area1, Row, Column)</l>
+<l>            concat_obj (defect_pcb_pad, ObjectSelected, defect_pcb_pad)</l>
+<l>            gen_empty_region (SelectedRegion)</l>
+<l>            for Index1 := 1 to ball_num by 1</l>
+<l>                concat_obj (pcb_ball, SelectedRegion, pcb_ball)</l>
+<l>            endfor</l>
+<l>            continue</l>
+<l>        endif</l>
+<l>        smallest_rectangle2 (ConnectedRegions3, Row3, Column3, Phi1, Length1, Length2)</l>
+<l>        tuple_sort (Length2, Sorted)</l>
+<l>        tuple_inverse (Sorted, Inverted)</l>
+<l>        select_shape (ConnectedRegions3, SelectedRegions2, 'rect2_len2', 'and', Inverted[ball_num-1], 99999)</l>
+<l>        area_center (SelectedRegions2, Area, pcb_row, pcb_col)</l>
+<l>        if (ball_num &gt;1)</l>
+<l>            area_center (ic_pad, Area2, ic_row, ic_col)</l>
+<l>            angle_ll (mean(ic_row), mean(ic_col), mean(pcb_row), mean(pcb_col), 0, 1, 0, 0, Phi)</l>
+<l>            hom_mat2d_identity (HomMat2DIdentity)</l>
+<l>            hom_mat2d_rotate (HomMat2DIdentity, Phi, mean(ic_row), mean(ic_col), HomMat2DRotate)</l>
+<l>            affine_trans_point_2d (HomMat2DRotate, ic_row, ic_col, ic_row_proj, ic_col_proj)</l>
+<l>            affine_trans_point_2d (HomMat2DRotate, pcb_row, pcb_col, pcb_row_proj, pcb_col_proj)</l>
+<l>*             gen_cross_contour_xld (Cross1, pcb_row_proj, pcb_col_proj, 6, Phi)</l>
+<l>*             gen_cross_contour_xld (Cross2, ic_row_proj, ic_col_proj, 6, Phi)</l>
+<l>            tuple_sort_index (pcb_row_proj, Indices)            </l>
+<l>        else</l>
+<l>            Indices := 0</l>
+<l>        endif</l>
+<l>        for ball_ind := 0 to ball_num-1 by 1</l>
+<l>            gen_circle (Circle1, pcb_row[Indices[ball_ind]], pcb_col[Indices[ball_ind]], pcb_radius_high+2)</l>
+<l>            intersection (Circle1, ObjectSelected1, Circle1)</l>
+<l>            reduce_domain (ImageGauss, Circle1, ImageReduced)</l>
+<l>            min_max_gray (Circle1, ImageReduced, 10, Min, Max, Range)</l>
+<l>            threshold (ImageReduced, Region2, Min+10, 255)</l>
+<l>            closing_circle (Region2, RegionFillUp, pcb_radius_low)</l>
+<l>            fill_up_shape (RegionFillUp, RegionFillUp, 'area', 1, 20)</l>
+<l>            num := 0</l>
+<l>            opening_size := pcb_radius_high</l>
+<l>            while (num # 1 and opening_size &gt;= pcb_radius_low)</l>
+<l>                opening_circle (RegionFillUp, RegionOpening, opening_size)</l>
+<l>                opening_size := opening_size-1</l>
+<l>                connection (RegionOpening, ConnectedRegions)</l>
+<l>                select_shape (ConnectedRegions, SelectedRegion, 'area', 'and', 1, 99999)</l>
+<l>                count_obj (SelectedRegion, num)</l>
+<l>            endwhile</l>
+<l>            if (num # 1)</l>
+<l>                concat_obj (defect_pcb_pad, ObjectSelected, defect_pcb_pad)</l>
+<l>                gen_empty_region (SelectedRegion)</l>
+<l>            endif</l>
+<l>            concat_obj (pcb_ball, SelectedRegion, pcb_ball)</l>
+<l>        endfor</l>
+<l>    endif    </l>
+<l>endfor</l>
+<l>count_obj (defect_pcb_pad, Number)</l>
+<l>if (Number)</l>
+<l>    iFlag := -1</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="pcb_ball_detect">
+<parameters>
+<parameter id="ImageIC"/>
+<parameter id="ImageLine"/>
+<parameter id="defect_pcb_pad"/>
+<parameter id="iFlag"/>
+<parameter id="ic_pad_affine"/>
+<parameter id="line_num"/>
+<parameter id="pcb_ball"/>
+<parameter id="pcb_ball_num"/>
+<parameter id="pcb_pad_affine"/>
+<parameter id="pcb_radius_high"/>
+<parameter id="pcb_radius_low"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="LFAOI_update_thresh_image">
+<interface>
+<io>
+<par name="vec_model_object" base_type="iconic" dimension="1"/>
+</io>
+<oo>
+<par name="pcb_golden_model" base_type="iconic" dimension="0"/>
+<par name="ic_golden_model" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="vec_model_param" base_type="ctrl" dimension="1"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>gen_empty_obj (pcb_golden_model)</l>
+<l>gen_empty_obj (ic_golden_model)</l>
+<c>* pcb</c>
+<l>pcb_sub_reg_num := vec_model_param.at(1)[0]</l>
+<l>pcb_sobel_scale := vec_model_param.at(1)[1]</l>
+<l>pcb_dark_thresh := vec_model_param.at(1)[2]</l>
+<l>pcb_light_thresh := vec_model_param.at(1)[3]</l>
+<l>pcb_model_object := vec_model_object.at(0)</l>
+<l>select_obj (pcb_model_object, pcb_mean_image, 1)</l>
+<l>select_obj (pcb_model_object, pcb_std_image, 2)</l>
+<l>select_obj (pcb_model_object, pcb_sub_region, 6)</l>
+<l>gen_thresh_image (pcb_mean_image, pcb_std_image, pcb_sub_region, \
+                  pcb_dark_thresh_image, pcb_light_thresh_image, \
+                  pcb_sub_reg_num, pcb_dark_thresh, pcb_light_thresh, pcb_sobel_scale, pcb_iFlag)</l>
+<l>if (pcb_iFlag # 0)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>copy_obj (pcb_model_object, pcb_golden_model, 1, 6)</l>
+<l>concat_obj (pcb_golden_model, pcb_dark_thresh_image, pcb_golden_model)</l>
+<l>concat_obj (pcb_golden_model, pcb_light_thresh_image, pcb_golden_model)</l>
+<c>* ic</c>
+<l>ic_sub_reg_num := vec_model_param.at(2)[0]</l>
+<l>ic_sobel_scale := vec_model_param.at(2)[1]</l>
+<l>ic_dark_thresh := vec_model_param.at(2)[2]</l>
+<l>ic_light_thresh := vec_model_param.at(2)[3]</l>
+<l>ic_model_object := vec_model_object.at(1)</l>
+<l>select_obj (ic_model_object, ic_mean_image, 1)</l>
+<l>select_obj (ic_model_object, ic_std_image, 2)</l>
+<l>select_obj (ic_model_object, ic_sub_region, 6)</l>
+<l>gen_thresh_image (ic_mean_image, ic_std_image, ic_sub_region, \
+                  ic_dark_thresh_image, ic_light_thresh_image, \
+                  ic_sub_reg_num, ic_dark_thresh, ic_light_thresh, ic_sobel_scale, ic_iFlag)</l>
+<l>if (ic_iFlag # 0)</l>
+<l>    iFlag := -1</l>
+<l>    return ()</l>
+<l>endif</l>
+<l>copy_obj (pcb_model_object, ic_golden_model, 1, 6)</l>
+<l>concat_obj (ic_golden_model, ic_dark_thresh_image, ic_golden_model)</l>
+<l>concat_obj (ic_golden_model, ic_light_thresh_image, ic_golden_model)</l>
+<l>return ()</l>
+</body>
+<docu id="LFAOI_update_thresh_image">
+<parameters>
+<parameter id="iFlag"/>
+<parameter id="ic_golden_model"/>
+<parameter id="pcb_golden_model"/>
+<parameter id="vec_model_object"/>
+<parameter id="vec_model_param"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

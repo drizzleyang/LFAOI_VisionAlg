@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="set_model_origin">
+<interface>
+<io>
+<par name="Region" base_type="iconic" dimension="0"/>
+</io>
+<ic>
+<par name="ModelType" base_type="ctrl" dimension="0"/>
+<par name="ModelID" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>* smallest_rectangle1 (Region, Row1, Column1, Row2, Column2)</l>
+<l>* Row := 0.5 * (Row1 + Row2)</l>
+<l>* Column := 0.5 * (Column1 + Column2)</l>
+<l>area_center (Region, Area, Row, Column)</l>
+<l>if(ModelType == 0)</l>
+<l>    set_ncc_model_origin (ModelID, -Row, -Column)</l>
+<l>else</l>
+<l>    set_shape_model_origin (ModelID, -Row, -Column)</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="set_model_origin">
+<parameters>
+<parameter id="ModelID"/>
+<parameter id="ModelType"/>
+<parameter id="Region"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

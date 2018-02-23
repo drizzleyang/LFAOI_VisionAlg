@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="compare_position">
+<interface>
+<ic>
+<par name="Row1" base_type="ctrl" dimension="0"/>
+<par name="Col1" base_type="ctrl" dimension="0"/>
+<par name="Angle1" base_type="ctrl" dimension="0"/>
+<par name="Row2" base_type="ctrl" dimension="0"/>
+<par name="Col2" base_type="ctrl" dimension="0"/>
+<par name="Angle2" base_type="ctrl" dimension="0"/>
+<par name="RowThr" base_type="ctrl" dimension="0"/>
+<par name="ColThr" base_type="ctrl" dimension="0"/>
+<par name="AngleThr" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="RowDiff" base_type="ctrl" dimension="0"/>
+<par name="ColDiff" base_type="ctrl" dimension="0"/>
+<par name="AngleDiff" base_type="ctrl" dimension="0"/>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := -1</l>
+<c></c>
+<l>RowDiff := abs(Row1 - Row2)</l>
+<l>ColDiff := abs(Col1 - Col2)</l>
+<l>AngleDiff := abs(Angle1 - Angle2)</l>
+<l>if(AngleDiff &gt; rad(180))</l>
+<l>    AngleDiff := rad(360) - AngleDiff</l>
+<l>endif</l>
+<c></c>
+<l>if(RowDiff &lt; RowThr and ColDiff &lt; ColThr and AngleDiff &lt; AngleThr)</l>
+<l>    iFlag := 0</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="compare_position">
+<parameters>
+<parameter id="Angle1"/>
+<parameter id="Angle2"/>
+<parameter id="AngleDiff"/>
+<parameter id="AngleThr"/>
+<parameter id="Col1"/>
+<parameter id="Col2"/>
+<parameter id="ColDiff"/>
+<parameter id="ColThr"/>
+<parameter id="Row1"/>
+<parameter id="Row2"/>
+<parameter id="RowDiff"/>
+<parameter id="RowThr"/>
+<parameter id="iFlag"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

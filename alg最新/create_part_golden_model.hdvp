@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="create_part_golden_model">
+<interface>
+<io>
+<par name="referImage" base_type="iconic" dimension="0"/>
+<par name="coarseRegion" base_type="iconic" dimension="0"/>
+<par name="TargetRegions" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="ImageRotate" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="Section" base_type="ctrl" dimension="0"/>
+<par name="match_model_path" base_type="ctrl" dimension="0"/>
+<par name="lessImage" base_type="ctrl" dimension="0"/>
+<par name="picName" base_type="ctrl" dimension="0"/>
+<par name="coarseMatchSearchWidth" base_type="ctrl" dimension="0"/>
+<par name="coarseMatchSearchHeight" base_type="ctrl" dimension="0"/>
+<par name="match_num" base_type="ctrl" dimension="0"/>
+<par name="targetSearchWidth" base_type="ctrl" dimension="0"/>
+<par name="targetSearchHeight" base_type="ctrl" dimension="0"/>
+<par name="angle_tup" base_type="ctrl" dimension="0"/>
+<par name="match_angleStart" base_type="ctrl" dimension="0"/>
+<par name="match_angleExtern" base_type="ctrl" dimension="0"/>
+<par name="match_scoreThresh" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlagMatch" base_type="ctrl" dimension="0"/>
+<par name="iErrMsg" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlagMatch := 0</l>
+<l>iErrMsg := ''</l>
+<c></c>
+<c>*enough image</c>
+<l>if (|Section|&lt;lessImage)</l>
+<l>    iFlagMatch := -1</l>
+<l>    iErrMsg := 'No enough image'</l>
+<l>endif</l>
+<c>*corase_match region</c>
+<l>dev_display(referImage)</l>
+<l>reduce_domain (referImage, coarseRegion, ImageReduced_coarseMatch)</l>
+<l>create_ncc_model (ImageReduced_coarseMatch, 'auto', -0.1, 0.2, 'auto', 'use_polarity', ModelID_coarseMatch)</l>
+<c></c>
+<l>area_center (coarseRegion, Area, Row_coarseMatch, Column_coarseMatch)</l>
+<l>set_ncc_model_origin (ModelID_coarseMatch, -Row_coarseMatch, -Column_coarseMatch)</l>
+<c></c>
+<l>dilation_rectangle1 (coarseRegion, SearchRegion, coarseMatchSearchWidth, coarseMatchSearchHeight)</l>
+<c>*target_match region</c>
+<l>count_obj (TargetRegions, Number)</l>
+<l>if(Number#match_num)</l>
+<l>    iFlagMatch := -2</l>
+<l>    iErrMsg := 'Wrong number of match regions'</l>
+<l>    return()</l>
+<l>endif</l>
+<c>*match_num circle</c>
+<l>for Index4 := 0 to match_num-1 by 1</l>
+<l>    pdt_path := match_model_path+'\\'+Index4</l>
+<l>    file_exists (pdt_path, FileExists)</l>
+<l>    if(FileExists#1)</l>
+<l>        make_dir (pdt_path)</l>
+<l>    endif</l>
+<c>    *save path</c>
+<l>    match_path := match_model_path+'\\'+Index4+'\\'+picName</l>
+<l>    file_exists (match_path, FileExists2)</l>
+<l>    if(FileExists2#1)</l>
+<l>        make_dir (match_path)</l>
+<l>    endif</l>
+<c>    </c>
+<l>    select_obj (TargetRegions, targetRegion, Index4+1)</l>
+<l>    reduce_domain (referImage, targetRegion, targetImage)</l>
+<c>    </c>
+<l>    create_ncc_model (targetImage, 'auto', -0.1, 0.2, 'auto', 'use_polarity', ModelID_target)</l>
+<l>    area_center (targetRegion, Area_target, Row_target, Column_target)</l>
+<l>    set_ncc_model_origin (ModelID_target, -Row_target, -Column_target)</l>
+<c>    </c>
+<l>    dilation_rectangle1 (targetRegion, SearchTargetRegion, targetSearchWidth, targetSearchHeight)</l>
+<c>    </c>
+<l>    get_image_size (targetImage, Width, Height)</l>
+<l>    gen_image_const (ImageAdd, 'real', Width, Height)</l>
+<l>    goodImage :=0</l>
+<c>    *test image circle</c>
+<l>    for Index5 := 0 to |Section|-1 by 1</l>
+<l>        read_image (tempImage, Section[Index5])</l>
+<l>        reduce_domain (tempImage, SearchRegion, ImageSearch)</l>
+<l>        find_ncc_model (ImageSearch, ModelID_coarseMatch, match_angleStart, match_angleExtern, match_scoreThresh, 1, 0.3, 'true', 0, Row, Column, Angle, Score)</l>
+<l>        if (Score&lt;0.5 or |Score|&lt;1)</l>
+<l>            continue</l>
+<l>        endif  </l>
+<c>        *align image to referImage</c>
+<l>        vector_angle_to_rigid (Row, Column, Angle, 0, 0, 0, HomMat2D1)</l>
+<l>        affine_trans_image (tempImage, ImageAffinTrans, HomMat2D1, 'constant', 'false')</l>
+<c>        </c>
+<l>        reduce_domain (ImageAffinTrans, SearchTargetRegion, SearchTargetImage)</l>
+<l>        find_ncc_model (SearchTargetImage, ModelID_target,  match_angleStart, match_angleExtern, match_scoreThresh, 1, 0.3, 'true', 0, Row4, Column4, Angle1, Score1)</l>
+<l>        if (Score1&lt;0.5 or |Score1|&lt;1)</l>
+<l>            continue</l>
+<l>        endif </l>
+<c>        *align SearchTargetImage to targetImage</c>
+<l>        vector_angle_to_rigid (Row4, Column4, Angle1, 0, 0, 0, HomMat2D2)</l>
+<l>        affine_trans_image (SearchTargetImage, ImageAffinTrans1, HomMat2D2, 'constant', 'false')</l>
+<l>        convert_image_type (ImageAffinTrans1, ImageAffinTrans1_real, 'real')</l>
+<l>        add_image (ImageAdd, ImageAffinTrans1_real, ImageAdd, 1, 0)</l>
+<l>        goodImage:= goodImage+1</l>
+<l>    endfor</l>
+<c>    *enough good images</c>
+<l>    if(goodImage&lt;lessImage)</l>
+<l>        iFlagMatch := -1</l>
+<l>        iErrMsg := 'No enough good image'</l>
+<l>    endif</l>
+<c>    *</c>
+<l>    scale_image (ImageAdd, ImageScaled, 1.0/goodImage, 0)</l>
+<l>    convert_image_type (ImageScaled, ImageConverted, 'byte')</l>
+<l>    reduce_domain (ImageConverted, targetRegion, ImageReduced)</l>
+<c>    *rotate ROI</c>
+<l>    crop_domain (ImageReduced, ImagePart)</l>
+<l>    rotate_image (ImagePart, ImageRotate, -angle_tup[Index4], 'constant')</l>
+<l>    create_ncc_model (ImageRotate, 'auto', -0.1, 0.2, 'auto', 'use_polarity', ModelID)</l>
+<l>    gen_empty_obj (EmptyObject)</l>
+<l>    write_model (EmptyObject, match_path, 0, ModelID, [], [], iFlag3)</l>
+<l>    clear_ncc_model (ModelID)</l>
+<l>    clear_ncc_model (ModelID_target)</l>
+<l>    stop ()</l>
+<l>endfor</l>
+<l>return ()</l>
+</body>
+<docu id="create_part_golden_model">
+<parameters>
+<parameter id="ImageRotate"/>
+<parameter id="Section"/>
+<parameter id="TargetRegions"/>
+<parameter id="angle_tup"/>
+<parameter id="coarseMatchSearchHeight"/>
+<parameter id="coarseMatchSearchWidth"/>
+<parameter id="coarseRegion"/>
+<parameter id="iErrMsg"/>
+<parameter id="iFlagMatch"/>
+<parameter id="lessImage"/>
+<parameter id="match_angleExtern"/>
+<parameter id="match_angleStart"/>
+<parameter id="match_model_path"/>
+<parameter id="match_num"/>
+<parameter id="match_scoreThresh"/>
+<parameter id="picName"/>
+<parameter id="referImage"/>
+<parameter id="targetSearchHeight"/>
+<parameter id="targetSearchWidth"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

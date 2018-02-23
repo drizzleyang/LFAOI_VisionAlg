@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="inspect_scratch">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+<par name="InspectRegion" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="DefectLines" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="IsGauss" base_type="ctrl" dimension="0"/>
+<par name="LineSigma" base_type="ctrl" dimension="0"/>
+<par name="LineLow" base_type="ctrl" dimension="0"/>
+<par name="LineHigh" base_type="ctrl" dimension="0"/>
+<par name="LightDark" base_type="ctrl" dimension="0"/>
+<par name="LengthThresh" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<c></c>
+<l>gen_empty_obj (DefectLines)</l>
+<l>reduce_domain (Image, InspectRegion, ImageReduced)</l>
+<l>if (IsGauss)</l>
+<l>*     lines_gauss (ImageReduced, Lines, 1, 1, 1.5, 'light', 'true', 'bar-shaped', 'true')</l>
+<l>    lines_gauss (ImageReduced, Lines, LineSigma, LineLow, LineHigh, LightDark, 'true', 'bar-shaped', 'true')</l>
+<l>else</l>
+<l>    lines_facet (ImageReduced, Lines, LineSigma, LineLow, LineHigh, LightDark)</l>
+<l>endif</l>
+<l>select_shape_xld (Lines, SelectedXLD, 'contlength', 'and', 3, 99999)</l>
+<l>* union_collinear_contours_xld (Lines, UnionContours, LengthThresh, 1, 2, 0.1, 'attr_keep')</l>
+<l>union_adjacent_contours_xld (SelectedXLD, UnionContours, LengthThresh, 1, 'attr_keep')</l>
+<c></c>
+<l>select_shape_xld (UnionContours, DefectLines, 'contlength', 'and', LengthThresh, 99999)</l>
+<c></c>
+<l>return ()</l>
+</body>
+<docu id="inspect_scratch">
+<parameters>
+<parameter id="DefectLines"/>
+<parameter id="Image"/>
+<parameter id="InspectRegion"/>
+<parameter id="IsGauss"/>
+<parameter id="LengthThresh"/>
+<parameter id="LightDark"/>
+<parameter id="LineHigh"/>
+<parameter id="LineLow"/>
+<parameter id="LineSigma"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="gold_wire_detect">
+<interface>
+<io>
+<par name="ImageIC" base_type="iconic" dimension="0"/>
+<par name="ImagePCB" base_type="iconic" dimension="0"/>
+<par name="ImageLine" base_type="iconic" dimension="0"/>
+<par name="ic_pad_affine" base_type="iconic" dimension="0"/>
+<par name="pcb_pad_affine" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="defect_region" base_type="iconic" dimension="0"/>
+<par name="gold_wire" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="line_num" base_type="ctrl" dimension="0"/>
+<par name="pcb_ball_num" base_type="ctrl" dimension="0"/>
+<par name="pcb_radius_low" base_type="ctrl" dimension="0"/>
+<par name="pcb_radius_high" base_type="ctrl" dimension="0"/>
+<par name="ic_radius_low" base_type="ctrl" dimension="0"/>
+<par name="ic_radius_high" base_type="ctrl" dimension="0"/>
+<par name="search_len1" base_type="ctrl" dimension="0"/>
+<par name="line_thresh" base_type="ctrl" dimension="0"/>
+<par name="line_width" base_type="ctrl" dimension="0"/>
+<par name="min_seg_length" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="iFlag" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>iFlag := 0</l>
+<l>gen_empty_obj (defect_region)</l>
+<l>union1 (pcb_pad_affine, pcb_pad)</l>
+<l>min_max_gray (pcb_pad, ImageLine, 20, Min, Max, Range)</l>
+<l>min_max_gray (pcb_pad, ImageIC, 20, Min1, Max1, Range1)</l>
+<l>sub_image (ImageLine, ImageIC, ImageSub, 1, min([max([0, Max1-Max]), 40]))</l>
+<l>pcb_ball_detect (ImageLine, ImageIC, pcb_pad_affine, ic_pad_affine, defect_pcb_pad, pcb_ball, pcb_ball_num, line_num, pcb_radius_low, pcb_radius_high, pcb_ball_iFlag)</l>
+<l>if (pcb_ball_iFlag # 0)</l>
+<l>    concat_obj (defect_region, defect_pcb_pad, defect_region)</l>
+<l>endif</l>
+<l>ic_ball_detect (ImageIC, ic_pad_affine, ic_ball, defect_ic_pad, line_num, ic_radius_low, ic_radius_high, ic_ball_iFlag)</l>
+<l>if (ic_ball_iFlag # 0)</l>
+<l>    concat_obj (defect_region, defect_ic_pad, defect_region)</l>
+<l>endif</l>
+<l>gen_empty_obj (gold_wire)</l>
+<l>* invert_image (ImagePCB, ImageInvert)</l>
+<l>* union1 (pcb_pad_affine, RegionUnion)</l>
+<l>* complement (RegionUnion, RegionComplement)</l>
+<l>* paint_region (RegionComplement, ImageInvert, ImageResult, 0, 'fill')</l>
+<l>* add_image (ImageLine, ImageResult, ImageAdd, 1, 0)</l>
+<l>for Index := 0 to line_num-1 by 1</l>
+<l>    select_obj (pcb_ball, pcb_ball_, Index+1)</l>
+<l>    select_obj (ic_ball, ic_ball_, Index+1)</l>
+<l>    track_wire_DP (ImageSub, ic_ball_, pcb_ball_, wire, defect_region_, search_len1, line_thresh, line_width, min_seg_length, iFlag1)</l>
+<l>    if (iFlag1 #0)</l>
+<l>        concat_obj (defect_region, defect_region_, defect_region)</l>
+<l>    endif</l>
+<l>    concat_obj (gold_wire, wire, gold_wire)</l>
+<l>endfor</l>
+<l>count_obj (defect_region, Number)</l>
+<c></c>
+<l>if (Number)</l>
+<l>    iFlag := -1</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="gold_wire_detect">
+<parameters>
+<parameter id="ImageIC"/>
+<parameter id="ImageLine"/>
+<parameter id="ImagePCB"/>
+<parameter id="defect_region"/>
+<parameter id="gold_wire"/>
+<parameter id="iFlag"/>
+<parameter id="ic_pad_affine"/>
+<parameter id="ic_radius_high"/>
+<parameter id="ic_radius_low"/>
+<parameter id="line_num"/>
+<parameter id="line_thresh"/>
+<parameter id="line_width"/>
+<parameter id="min_seg_length"/>
+<parameter id="pcb_ball_num"/>
+<parameter id="pcb_pad_affine"/>
+<parameter id="pcb_radius_high"/>
+<parameter id="pcb_radius_low"/>
+<parameter id="search_len1"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>
